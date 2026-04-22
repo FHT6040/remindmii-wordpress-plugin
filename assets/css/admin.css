@@ -1,3 +1,24 @@
 .toplevel_page_remindmii .wrap {
 	max-width: 960px;
 }
+
+.remindmii-admin-page {
+	background: #ffffff;
+	padding: 24px;
+	border: 1px solid #dcdcde;
+	border-radius: 10px;
+	margin-top: 20px;
+	box-sizing: border-box;
+}
+
+.remindmii-admin-page h1 {
+	margin-top: 0;
+}
+
+.remindmii-admin-form {
+	margin-top: 24px;
+}
+
+.remindmii-admin-form .form-table {
+	max-width: 840px;
+}
