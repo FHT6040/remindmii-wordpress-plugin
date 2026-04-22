@@ -21,6 +21,7 @@ class Remindmii_Admin {
 		add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'admin_post_remindmii_run_notifications', array( $this, 'handle_run_notifications' ) );
 	}
 
 	/**
@@ -181,6 +182,58 @@ class Remindmii_Admin {
 	}
 
 	/**
+	 * Run notification cron processing manually from the admin page.
+	 *
+	 * @return void
+	 */
+	public function handle_run_notifications() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You are not allowed to perform this action.', 'remindmii' ) );
+		}
+
+		check_admin_referer( 'remindmii_run_notifications' );
+
+		do_action( 'remindmii_process_notifications' );
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'               => 'remindmii',
+					'remindmii_notice'   => 'notifications_ran',
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Fetch latest notification log rows.
+	 *
+	 * @param int $limit Number of rows to return.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_notification_logs( $limit = 30 ) {
+		global $wpdb;
+
+		$limit = max( 1, min( 200, absint( $limit ) ) );
+		$table = $wpdb->prefix . 'remindmii_notifications_log';
+
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, user_id, reminder_id, notification_type, channel, status, message, sent_at, created_at
+				FROM {$table}
+				ORDER BY id DESC
+				LIMIT %d",
+				$limit
+			),
+			ARRAY_A
+		);
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
 	 * Render placeholder admin page.
 	 *
 	 * @return void
@@ -190,10 +243,19 @@ class Remindmii_Admin {
 			return;
 		}
 
+		$notice = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
+		$logs   = $this->get_notification_logs();
+
 		?>
 		<div class="wrap remindmii-admin-page">
 			<h1><?php echo esc_html__( 'Remindmii', 'remindmii' ); ?></h1>
 			<p><?php echo esc_html__( 'Manage the plugin defaults for new and backfilled Remindmii users.', 'remindmii' ); ?></p>
+
+			<?php if ( 'notifications_ran' === $notice ) : ?>
+				<div class="notice notice-success is-dismissible">
+					<p><?php echo esc_html__( 'Notification processing was run successfully.', 'remindmii' ); ?></p>
+				</div>
+			<?php endif; ?>
 
 			<form method="post" action="options.php" class="remindmii-admin-form">
 				<?php
@@ -202,6 +264,56 @@ class Remindmii_Admin {
 				submit_button( __( 'Save settings', 'remindmii' ) );
 				?>
 			</form>
+
+			<div class="remindmii-admin-section">
+				<h2><?php echo esc_html__( 'Notification Diagnostics', 'remindmii' ); ?></h2>
+				<p><?php echo esc_html__( 'Use this to run reminder notifications immediately and inspect the latest delivery logs.', 'remindmii' ); ?></p>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="remindmii-admin-inline-form">
+					<input type="hidden" name="action" value="remindmii_run_notifications" />
+					<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
+					<?php submit_button( __( 'Run Notifications Now', 'remindmii' ), 'secondary', 'submit', false ); ?>
+				</form>
+
+				<div class="remindmii-table-wrap">
+					<table class="widefat striped remindmii-log-table">
+						<thead>
+							<tr>
+								<th><?php echo esc_html__( 'ID', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'User', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Reminder', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Type', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Channel', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Status', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Message', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Sent At', 'remindmii' ); ?></th>
+								<th><?php echo esc_html__( 'Created At', 'remindmii' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php if ( empty( $logs ) ) : ?>
+								<tr>
+									<td colspan="9"><?php echo esc_html__( 'No notification logs yet.', 'remindmii' ); ?></td>
+								</tr>
+							<?php else : ?>
+								<?php foreach ( $logs as $log ) : ?>
+									<tr>
+										<td><?php echo esc_html( (string) $log['id'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['user_id'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['reminder_id'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['notification_type'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['channel'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['status'] ); ?></td>
+										<td><?php echo esc_html( (string) $log['message'] ); ?></td>
+										<td><?php echo esc_html( ! empty( $log['sent_at'] ) ? (string) $log['sent_at'] : '-' ); ?></td>
+										<td><?php echo esc_html( (string) $log['created_at'] ); ?></td>
+									</tr>
+								<?php endforeach; ?>
+							<?php endif; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 		<?php
 	}

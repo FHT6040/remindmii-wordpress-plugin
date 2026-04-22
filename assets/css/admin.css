@@ -22,3 +22,27 @@
 .remindmii-admin-form .form-table {
 	max-width: 840px;
 }
+
+.remindmii-admin-section {
+	margin-top: 28px;
+	padding-top: 18px;
+	border-top: 1px solid #dcdcde;
+}
+
+.remindmii-admin-inline-form {
+	margin: 12px 0 18px;
+}
+
+.remindmii-table-wrap {
+	overflow-x: auto;
+}
+
+.remindmii-log-table th,
+.remindmii-log-table td {
+	white-space: nowrap;
+}
+
+.remindmii-log-table td:nth-child(7) {
+	white-space: normal;
+	min-width: 260px;
+}
