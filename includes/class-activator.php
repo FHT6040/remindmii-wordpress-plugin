@@ -1,0 +1,16 @@
+<?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Remindmii_Activator {
+	/**
+	 * Run activation tasks.
+	 *
+	 * @return void
+	 */
+	public static function activate() {
+		Remindmii_Installer::install();
+	}
+}
