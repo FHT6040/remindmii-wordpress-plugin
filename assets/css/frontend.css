@@ -6,12 +6,190 @@
 	max-width: 720px;
 	margin: 24px auto;
 	box-sizing: border-box;
+	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
 }
 
 .remindmii-app-shell__header h2 {
 	margin: 0 0 12px;
 }
 
-.remindmii-app-shell__body p {
+.remindmii-app-shell__intro {
 	margin: 0;
+	color: #475569;
+}
+
+.remindmii-app-shell__body {
+	display: grid;
+	gap: 16px;
+	margin-top: 20px;
+}
+
+.remindmii-app-shell__status {
+	margin: 0;
+	min-height: 24px;
+	color: #475569;
+}
+
+.remindmii-app-shell__status.is-error {
+	color: #b91c1c;
+}
+
+.remindmii-auth-message {
+	padding: 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #f8fafc;
+}
+
+.remindmii-auth-message p {
+	margin: 0 0 12px;
+}
+
+.remindmii-form {
+	display: grid;
+	gap: 16px;
+	padding: 18px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #f8fafc;
+}
+
+.remindmii-field-group {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+}
+
+.remindmii-field {
+	display: grid;
+	gap: 8px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.remindmii-field input,
+.remindmii-field textarea,
+.remindmii-field select {
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	background: #ffffff;
+	box-sizing: border-box;
+	font: inherit;
+}
+
+.remindmii-checkbox {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-weight: 600;
+	color: #0f172a;
+}
+
+.remindmii-form__actions {
+	display: flex;
+	justify-content: flex-start;
+}
+
+.remindmii-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 10px 14px;
+	border: 1px solid #047857;
+	border-radius: 8px;
+	background: #059669;
+	color: #ffffff;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.remindmii-button:disabled {
+	opacity: 0.7;
+	cursor: wait;
+}
+
+.remindmii-button--secondary {
+	border-color: #cbd5e1;
+	background: #ffffff;
+	color: #0f172a;
+}
+
+.remindmii-button--danger {
+	border-color: #dc2626;
+	background: #dc2626;
+	color: #ffffff;
+}
+
+.remindmii-reminders {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 12px;
+}
+
+.remindmii-reminder {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #ffffff;
+}
+
+.remindmii-reminder--completed {
+	background: #f8fafc;
+	opacity: 0.82;
+}
+
+.remindmii-reminder--completed h3 {
+	text-decoration: line-through;
+}
+
+.remindmii-reminder--empty {
+	justify-content: center;
+}
+
+.remindmii-reminder__content {
+	flex: 1 1 auto;
+}
+
+.remindmii-reminder__content h3 {
+	margin: 0 0 8px;
+	font-size: 1.05rem;
+}
+
+.remindmii-reminder__meta,
+.remindmii-reminder__description {
+	margin: 0;
+	color: #475569;
+}
+
+.remindmii-reminder__description {
+	margin-top: 8px;
+}
+
+.remindmii-reminder__actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+@media (max-width: 640px) {
+	.remindmii-field-group {
+		grid-template-columns: 1fr;
+	}
+
+	.remindmii-reminder {
+		flex-direction: column;
+	}
+
+	.remindmii-reminder__actions {
+		flex-direction: row;
+		flex-wrap: wrap;
+	}
 }

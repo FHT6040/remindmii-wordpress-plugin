@@ -6,8 +6,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="remindmii-app-shell" data-remindmii-app>
 	<div class="remindmii-app-shell__header">
 		<h2><?php echo esc_html__( 'Remindmii', 'remindmii' ); ?></h2>
+		<p class="remindmii-app-shell__intro"><?php echo esc_html__( 'Create and manage your reminders directly from WordPress.', 'remindmii' ); ?></p>
 	</div>
 	<div class="remindmii-app-shell__body">
-		<p><?php echo esc_html__( 'The WordPress-native Remindmii app foundation is active.', 'remindmii' ); ?></p>
+		<div class="remindmii-app-shell__status" data-remindmii-status aria-live="polite">
+			<?php echo esc_html__( 'Loading reminders...', 'remindmii' ); ?>
+		</div>
+
+		<div class="remindmii-auth-message" data-remindmii-auth-message hidden>
+			<p><?php echo esc_html__( 'You need to be logged in to use Remindmii.', 'remindmii' ); ?></p>
+			<a class="remindmii-button remindmii-button--secondary" data-remindmii-login-link href="#">
+				<?php echo esc_html__( 'Log in', 'remindmii' ); ?>
+			</a>
+		</div>
+
+		<form class="remindmii-form" data-remindmii-form hidden>
+			<div class="remindmii-field-group">
+				<label class="remindmii-field">
+					<span><?php echo esc_html__( 'Title', 'remindmii' ); ?></span>
+					<input type="text" name="title" maxlength="191" required />
+				</label>
+				<label class="remindmii-field">
+					<span><?php echo esc_html__( 'Reminder date', 'remindmii' ); ?></span>
+					<input type="datetime-local" name="reminder_date" required />
+				</label>
+			</div>
+
+			<label class="remindmii-field">
+				<span><?php echo esc_html__( 'Description', 'remindmii' ); ?></span>
+				<textarea name="description" rows="4"></textarea>
+			</label>
+
+			<label class="remindmii-checkbox">
+				<input type="checkbox" name="is_recurring" value="1" />
+				<span><?php echo esc_html__( 'Recurring reminder', 'remindmii' ); ?></span>
+			</label>
+
+			<label class="remindmii-field">
+				<span><?php echo esc_html__( 'Repeat interval', 'remindmii' ); ?></span>
+				<select name="recurrence_interval">
+					<option value=""><?php echo esc_html__( 'No repeat', 'remindmii' ); ?></option>
+					<option value="daily"><?php echo esc_html__( 'Daily', 'remindmii' ); ?></option>
+					<option value="weekly"><?php echo esc_html__( 'Weekly', 'remindmii' ); ?></option>
+					<option value="monthly"><?php echo esc_html__( 'Monthly', 'remindmii' ); ?></option>
+					<option value="yearly"><?php echo esc_html__( 'Yearly', 'remindmii' ); ?></option>
+				</select>
+			</label>
+
+			<div class="remindmii-form__actions">
+				<button type="submit" class="remindmii-button" data-remindmii-submit>
+					<?php echo esc_html__( 'Create reminder', 'remindmii' ); ?>
+				</button>
+			</div>
+		</form>
+
+		<ul class="remindmii-reminders" data-remindmii-list hidden></ul>
 	</div>
 </div>
