@@ -21,6 +21,7 @@ define( 'REMINDMII_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'REMINDMII_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-activator.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/class-deactivator.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-installer.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-admin.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-frontend.php';
@@ -32,6 +33,7 @@ require_once REMINDMII_PLUGIN_DIR . 'includes/db/class-schema.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-plugin.php';
 
 register_activation_hook( __FILE__, array( 'Remindmii_Activator', 'activate' ) );
+register_deactivation_hook( __FILE__, array( 'Remindmii_Deactivator', 'deactivate' ) );
 
 function remindmii_run_plugin() {
 	$plugin = new Remindmii_Plugin();
