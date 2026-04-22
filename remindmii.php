@@ -28,6 +28,8 @@ require_once REMINDMII_PLUGIN_DIR . 'includes/class-frontend.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-rest.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-cron.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-security.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/repositories/class-reminders-repository.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-reminders-controller.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/db/class-schema.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-plugin.php';

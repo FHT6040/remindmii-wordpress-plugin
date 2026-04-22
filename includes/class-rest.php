@@ -6,6 +6,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Remindmii_REST {
 	/**
+	 * Reminder controller instance.
+	 *
+	 * @var Remindmii_REST_Reminders_Controller
+	 */
+	private $reminders_controller;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->reminders_controller = new Remindmii_REST_Reminders_Controller(
+			new Remindmii_Reminders_Repository()
+		);
+	}
+
+	/**
 	 * Register REST hooks.
 	 *
 	 * @return void
@@ -20,6 +36,8 @@ class Remindmii_REST {
 	 * @return void
 	 */
 	public function register_routes() {
+		$this->reminders_controller->register_routes();
+
 		register_rest_route(
 			'remindmii/v1',
 			'/health',
