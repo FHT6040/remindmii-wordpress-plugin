@@ -22,3 +22,6 @@ This plugin is the new WordPress-native base for the Remindmii product.
 
 = 0.1.0 =
 * Initial plugin skeleton.
+* Added reminder and category REST APIs with shortcode frontend app.
+* Added user profile settings API and per-user notification preferences.
+* Added WordPress cron processing for due email reminder notifications and notification logging.

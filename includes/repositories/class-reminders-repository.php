@@ -43,6 +43,41 @@ class Remindmii_Reminders_Repository {
 	}
 
 	/**
+	 * Fetch reminders that should trigger notifications now.
+	 *
+	 * @param int $limit Maximum reminders to fetch.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_due_for_notifications( $limit = 50 ) {
+		global $wpdb;
+
+		$limit          = max( 1, absint( $limit ) );
+		$profiles_table = $wpdb->prefix . 'remindmii_user_profiles';
+		$now            = current_time( 'mysql' );
+
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT reminders.*, profiles.email AS profile_email, profiles.full_name AS profile_full_name, profiles.notification_hours
+				FROM {$this->table_name()} AS reminders
+				INNER JOIN {$profiles_table} AS profiles ON profiles.user_id = reminders.user_id
+				WHERE reminders.notification_sent = 0
+					AND reminders.is_completed = 0
+					AND profiles.email_notifications = 1
+					AND profiles.email IS NOT NULL
+					AND profiles.email <> ''
+					AND reminders.reminder_date <= DATE_ADD( %s, INTERVAL profiles.notification_hours HOUR )
+				ORDER BY reminders.reminder_date ASC, reminders.id ASC
+				LIMIT %d",
+				$now,
+				$limit
+			),
+			ARRAY_A
+		);
+
+		return is_array( $results ) ? array_map( array( $this, 'map_notification_record' ), $results ) : array();
+	}
+
+	/**
 	 * Fetch a single reminder for a user.
 	 *
 	 * @param int $reminder_id Reminder ID.
@@ -177,6 +212,66 @@ class Remindmii_Reminders_Repository {
 	}
 
 	/**
+	 * Mark a reminder notification as sent.
+	 *
+	 * @param int $reminder_id Reminder ID.
+	 * @param int $user_id     WordPress user ID.
+	 * @return bool
+	 */
+	public function mark_notification_sent( $reminder_id, $user_id ) {
+		global $wpdb;
+
+		$updated = $wpdb->update(
+			$this->table_name(),
+			array(
+				'notification_sent' => 1,
+				'updated_at'        => current_time( 'mysql' ),
+			),
+			array(
+				'id'      => absint( $reminder_id ),
+				'user_id' => absint( $user_id ),
+			),
+			array( '%d', '%s' ),
+			array( '%d', '%d' )
+		);
+
+		return false !== $updated;
+	}
+
+	/**
+	 * Move a recurring reminder to its next date and reset notification state.
+	 *
+	 * @param array<string, mixed> $reminder Reminder payload.
+	 * @return bool
+	 */
+	public function reschedule_recurring( $reminder ) {
+		global $wpdb;
+
+		$next_date = $this->get_next_occurrence( (string) $reminder['reminder_date'], (string) $reminder['recurrence_interval'] );
+
+		if ( null === $next_date ) {
+			return $this->mark_notification_sent( (int) $reminder['id'], (int) $reminder['user_id'] );
+		}
+
+		$updated = $wpdb->update(
+			$this->table_name(),
+			array(
+				'reminder_date'      => $next_date,
+				'notification_sent'  => 0,
+				'updated_at'         => current_time( 'mysql' ),
+			),
+			array(
+				'id'      => absint( $reminder['id'] ),
+				'user_id' => absint( $reminder['user_id'] ),
+			),
+			array( '%s', '%d', '%s' ),
+			array( '%d', '%d' )
+		);
+
+		return false !== $updated;
+	}
+
+	/**
 	 * Normalize a database row for API output.
 	 *
 	 * @param array<string, mixed> $record Raw database row.
@@ -191,5 +286,48 @@ class Remindmii_Reminders_Repository {
 		$record['is_completed']      = (bool) $record['is_completed'];
 
 		return $record;
+	}
+
+	/**
+	 * Normalize a reminder row joined with notification profile data.
+	 *
+	 * @param array<string, mixed> $record Raw database row.
+	 * @return array<string, mixed>
+	 */
+	private function map_notification_record( $record ) {
+		$record                       = $this->map_record( $record );
+		$record['profile_email']      = (string) $record['profile_email'];
+		$record['profile_full_name']  = null !== $record['profile_full_name'] ? (string) $record['profile_full_name'] : '';
+		$record['notification_hours'] = (int) $record['notification_hours'];
+
+		return $record;
+	}
+
+	/**
+	 * Calculate the next reminder occurrence.
+	 *
+	 * @param string $reminder_date Current reminder date.
+	 * @param string $interval      Recurrence interval.
+	 * @return string|null
+	 */
+	private function get_next_occurrence( $reminder_date, $interval ) {
+		$timestamp = strtotime( $reminder_date );
+
+		if ( false === $timestamp ) {
+			return null;
+		}
+
+		switch ( strtolower( $interval ) ) {
+			case 'daily':
+					return date( 'Y-m-d H:i:s', strtotime( '+1 day', $timestamp ) );
+			case 'weekly':
+					return date( 'Y-m-d H:i:s', strtotime( '+1 week', $timestamp ) );
+			case 'monthly':
+					return date( 'Y-m-d H:i:s', strtotime( '+1 month', $timestamp ) );
+			case 'yearly':
+					return date( 'Y-m-d H:i:s', strtotime( '+1 year', $timestamp ) );
+			default:
+				return null;
+		}
 	}
 }
