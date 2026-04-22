@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	var status = root.querySelector('[data-remindmii-status]');
 	var authMessage = root.querySelector('[data-remindmii-auth-message]');
 	var loginLink = root.querySelector('[data-remindmii-login-link]');
+	var profileForm = root.querySelector('[data-remindmii-profile-form]');
+	var profileSubmitButton = root.querySelector('[data-remindmii-profile-submit]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
 	var editingInput = root.querySelector('[data-remindmii-editing-id]');
@@ -44,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		form.addEventListener('submit', handleCreateReminder);
 	}
 
+	if (profileForm) {
+		profileForm.hidden = false;
+		profileForm.addEventListener('submit', handleSaveProfile);
+	}
+
 	if (list) {
 		list.hidden = false;
 	}
@@ -60,7 +67,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		cancelEditButton.addEventListener('click', resetFormState);
 	}
 
+	loadProfile();
 	loadCategories().then(loadReminders);
+
+	async function loadProfile() {
+		try {
+			var response = await apiRequest(config.profileUrl, { method: 'GET' });
+			var profile = await response.json();
+			fillProfileForm(profile || {});
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		}
+	}
 
 	async function loadCategories() {
 		try {
@@ -182,6 +200,44 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 	}
 
+	async function handleSaveProfile(event) {
+		event.preventDefault();
+
+		if (!profileForm || !profileSubmitButton) {
+			return;
+		}
+
+		var formData = new FormData(profileForm);
+		var payload = {
+			full_name: String(formData.get('full_name') || '').trim(),
+			email: String(formData.get('email') || '').trim(),
+			phone: String(formData.get('phone') || '').trim(),
+			birth_date: String(formData.get('birth_date') || '').trim(),
+			gender: String(formData.get('gender') || '').trim(),
+			pronouns: String(formData.get('pronouns') || '').trim(),
+			email_notifications: formData.get('email_notifications') === '1',
+			notification_hours: String(formData.get('notification_hours') || '24').trim()
+		};
+
+		profileSubmitButton.disabled = true;
+		profileSubmitButton.textContent = config.i18n.savingProfile;
+
+		try {
+			var response = await apiRequest(config.profileUrl, {
+				method: 'PUT',
+				body: JSON.stringify(payload)
+			});
+			var profile = await response.json();
+			fillProfileForm(profile || {});
+			setStatus(config.i18n.profileSaved, false);
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		} finally {
+			profileSubmitButton.disabled = false;
+			profileSubmitButton.textContent = config.i18n.saveProfile;
+		}
+	}
+
 	async function handleToggleReminder(reminder) {
 		try {
 			setStatus('', false);
@@ -290,6 +346,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		setStatus(config.i18n.editingStatus, false);
 		form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function fillProfileForm(profile) {
+		if (!profileForm) {
+			return;
+		}
+
+		profileForm.elements.full_name.value = profile.full_name || '';
+		profileForm.elements.email.value = profile.email || '';
+		profileForm.elements.phone.value = profile.phone || '';
+		profileForm.elements.birth_date.value = profile.birth_date || '';
+		profileForm.elements.gender.value = profile.gender || '';
+		profileForm.elements.pronouns.value = profile.pronouns || '';
+		profileForm.elements.email_notifications.checked = Boolean(profile.email_notifications);
+		profileForm.elements.notification_hours.value = profile.notification_hours || 24;
 	}
 
 	function resetFormState() {

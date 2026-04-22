@@ -45,6 +45,20 @@
 	margin: 0 0 12px;
 }
 
+.remindmii-profile-form {
+	display: grid;
+	gap: 16px;
+	padding: 18px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #ffffff;
+}
+
+.remindmii-profile-form h3 {
+	margin: 0;
+	font-size: 1.05rem;
+}
+
 .remindmii-form {
 	display: grid;
 	gap: 16px;

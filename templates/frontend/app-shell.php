@@ -14,6 +14,55 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<?php echo esc_html__( 'Loading reminders...', 'remindmii' ); ?>
 		</div>
 
+			<form class="remindmii-profile-form" data-remindmii-profile-form hidden>
+				<h3><?php echo esc_html__( 'Profile settings', 'remindmii' ); ?></h3>
+				<div class="remindmii-field-group">
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Full name', 'remindmii' ); ?></span>
+						<input type="text" name="full_name" maxlength="191" />
+					</label>
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Email', 'remindmii' ); ?></span>
+						<input type="email" name="email" maxlength="191" />
+					</label>
+				</div>
+				<div class="remindmii-field-group">
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Phone', 'remindmii' ); ?></span>
+						<input type="text" name="phone" maxlength="50" />
+					</label>
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Birth date', 'remindmii' ); ?></span>
+						<input type="date" name="birth_date" />
+					</label>
+				</div>
+				<div class="remindmii-field-group">
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Gender', 'remindmii' ); ?></span>
+						<input type="text" name="gender" maxlength="50" />
+					</label>
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Pronouns', 'remindmii' ); ?></span>
+						<input type="text" name="pronouns" maxlength="100" />
+					</label>
+				</div>
+				<div class="remindmii-field-group">
+					<label class="remindmii-checkbox">
+						<input type="checkbox" name="email_notifications" value="1" />
+						<span><?php echo esc_html__( 'Enable email notifications', 'remindmii' ); ?></span>
+					</label>
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Notify me this many hours before', 'remindmii' ); ?></span>
+						<input type="number" min="1" max="720" name="notification_hours" />
+					</label>
+				</div>
+				<div class="remindmii-form__actions">
+					<button type="submit" class="remindmii-button" data-remindmii-profile-submit>
+						<?php echo esc_html__( 'Save profile', 'remindmii' ); ?>
+					</button>
+				</div>
+			</form>
+
 		<div class="remindmii-auth-message" data-remindmii-auth-message hidden>
 			<p><?php echo esc_html__( 'You need to be logged in to use Remindmii.', 'remindmii' ); ?></p>
 			<a class="remindmii-button remindmii-button--secondary" data-remindmii-login-link href="#">

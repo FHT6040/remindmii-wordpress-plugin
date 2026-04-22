@@ -26,11 +26,13 @@ class Remindmii_Shortcodes {
 			array(
 				'restUrl'      => esc_url_raw( rest_url( 'remindmii/v1/reminders' ) ),
 				'categoriesUrl'=> esc_url_raw( rest_url( 'remindmii/v1/categories' ) ),
+				'profileUrl'   => esc_url_raw( rest_url( 'remindmii/v1/profile' ) ),
 				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
 				'i18n'         => array(
 					'loading'          => __( 'Loading reminders...', 'remindmii' ),
+					'loadingProfile'   => __( 'Loading profile...', 'remindmii' ),
 					'notLoggedIn'      => __( 'You need to be logged in to use Remindmii.', 'remindmii' ),
 					'loginCta'         => __( 'Log in', 'remindmii' ),
 					'empty'            => __( 'No reminders yet.', 'remindmii' ),
@@ -57,6 +59,18 @@ class Remindmii_Shortcodes {
 					'noCategory'       => __( 'No category', 'remindmii' ),
 					'newCategoryLabel' => __( 'New category', 'remindmii' ),
 					'descriptionLabel' => __( 'Description', 'remindmii' ),
+					'profileHeading'   => __( 'Profile settings', 'remindmii' ),
+					'fullName'         => __( 'Full name', 'remindmii' ),
+					'email'            => __( 'Email', 'remindmii' ),
+					'phone'            => __( 'Phone', 'remindmii' ),
+					'birthDate'        => __( 'Birth date', 'remindmii' ),
+					'gender'           => __( 'Gender', 'remindmii' ),
+					'pronouns'         => __( 'Pronouns', 'remindmii' ),
+					'emailNotifications' => __( 'Enable email notifications', 'remindmii' ),
+					'notificationHours'  => __( 'Notify me this many hours before', 'remindmii' ),
+					'saveProfile'      => __( 'Save profile', 'remindmii' ),
+					'savingProfile'    => __( 'Saving profile...', 'remindmii' ),
+					'profileSaved'     => __( 'Profile saved.', 'remindmii' ),
 				),
 			)
 		);
