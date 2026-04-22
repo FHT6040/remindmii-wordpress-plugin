@@ -13,12 +13,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	var loginLink = root.querySelector('[data-remindmii-login-link]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
+	var editingInput = root.querySelector('[data-remindmii-editing-id]');
 	var categoriesList = root.querySelector('[data-remindmii-categories]');
 	var categorySelect = root.querySelector('[data-remindmii-category-select]');
 	var categoryNameInput = root.querySelector('[data-remindmii-category-name]');
 	var categorySubmitButton = root.querySelector('[data-remindmii-category-submit]');
+	var cancelEditButton = root.querySelector('[data-remindmii-cancel-edit]');
 	var submitButton = root.querySelector('[data-remindmii-submit]');
 	var categories = [];
+	var reminders = [];
 
 	if (!config.isLoggedIn) {
 		if (status) {
@@ -53,6 +56,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		categorySubmitButton.addEventListener('click', handleCreateCategory);
 	}
 
+	if (cancelEditButton) {
+		cancelEditButton.addEventListener('click', resetFormState);
+	}
+
 	loadCategories().then(loadReminders);
 
 	async function loadCategories() {
@@ -70,9 +77,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		try {
 			var response = await apiRequest(config.restUrl, { method: 'GET' });
-			var reminders = await response.json();
+			var responseData = await response.json();
 
-			renderReminders(Array.isArray(reminders) ? reminders : []);
+			reminders = Array.isArray(responseData) ? responseData : [];
+			renderReminders(reminders);
 			setStatus('', false);
 		} catch (error) {
 			setStatus(getErrorMessage(error), true);
@@ -103,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		var isRecurring = formData.get('is_recurring') === '1';
+		var editingId = getEditingReminderId();
 		var payload = {
 			category_id: String(formData.get('category_id') || '').trim(),
 			title: title,
@@ -110,26 +119,26 @@ document.addEventListener('DOMContentLoaded', function () {
 			reminder_date: reminderDate.toISOString(),
 			is_recurring: isRecurring,
 			recurrence_interval: isRecurring ? String(formData.get('recurrence_interval') || '') : '',
-			is_completed: false
+			is_completed: editingId ? getEditingReminderCompletedState(editingId) : false
 		};
 
 		submitButton.disabled = true;
-		submitButton.textContent = config.i18n.creating;
+		submitButton.textContent = editingId ? config.i18n.updating : config.i18n.creating;
 		setStatus('', false);
 
 		try {
-			await apiRequest(config.restUrl, {
-				method: 'POST',
+			await apiRequest(editingId ? config.restUrl + '/' + editingId : config.restUrl, {
+				method: editingId ? 'PUT' : 'POST',
 				body: JSON.stringify(payload)
 			});
 
-			form.reset();
+			resetFormState();
 			await loadReminders();
 		} catch (error) {
 			setStatus(getErrorMessage(error), true);
 		} finally {
 			submitButton.disabled = false;
-			submitButton.textContent = config.i18n.create;
+			submitButton.textContent = getEditingReminderId() ? config.i18n.update : config.i18n.create;
 		}
 	}
 
@@ -203,6 +212,9 @@ document.addEventListener('DOMContentLoaded', function () {
 		try {
 			setStatus('', false);
 			await apiRequest(config.restUrl + '/' + reminderId, { method: 'DELETE' });
+			if (String(getEditingReminderId()) === String(reminderId)) {
+				resetFormState();
+			}
 			await loadReminders();
 		} catch (error) {
 			setStatus(getErrorMessage(error), true);
@@ -237,9 +249,14 @@ document.addEventListener('DOMContentLoaded', function () {
 					description +
 				'</div>' +
 				'<div class="remindmii-reminder__actions">' +
+					'<button type="button" class="remindmii-button remindmii-button--secondary" data-action="edit">' + escapeHtml(config.i18n.edit) + '</button>' +
 					'<button type="button" class="remindmii-button remindmii-button--secondary" data-action="toggle">' + escapeHtml(reminder.is_completed ? config.i18n.markActive : config.i18n.markComplete) + '</button>' +
 					'<button type="button" class="remindmii-button remindmii-button--danger" data-action="delete">' + escapeHtml(config.i18n.delete) + '</button>' +
 				'</div>';
+
+			item.querySelector('[data-action="edit"]').addEventListener('click', function () {
+				beginEditReminder(reminder);
+			});
 
 			item.querySelector('[data-action="toggle"]').addEventListener('click', function () {
 				handleToggleReminder(reminder);
@@ -251,6 +268,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			list.appendChild(item);
 		});
+	}
+
+	function beginEditReminder(reminder) {
+		if (!form || !submitButton || !editingInput) {
+			return;
+		}
+
+		editingInput.value = String(reminder.id);
+		form.elements.title.value = reminder.title || '';
+		form.elements.description.value = reminder.description || '';
+		form.elements.category_id.value = reminder.category_id ? String(reminder.category_id) : '';
+		form.elements.is_recurring.checked = Boolean(reminder.is_recurring);
+		form.elements.recurrence_interval.value = reminder.recurrence_interval || '';
+		form.elements.reminder_date.value = toDatetimeLocalValue(reminder.reminder_date);
+		submitButton.textContent = config.i18n.update;
+
+		if (cancelEditButton) {
+			cancelEditButton.hidden = false;
+		}
+
+		setStatus(config.i18n.editingStatus, false);
+		form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	function resetFormState() {
+		if (form) {
+			form.reset();
+		}
+
+		if (editingInput) {
+			editingInput.value = '';
+		}
+
+		if (submitButton) {
+			submitButton.textContent = config.i18n.create;
+			submitButton.disabled = false;
+		}
+
+		if (cancelEditButton) {
+			cancelEditButton.hidden = true;
+		}
+
+		if (categorySelect) {
+			categorySelect.value = '';
+		}
+
+		setStatus('', false);
 	}
 
 	function renderCategories(categoryItems) {
@@ -300,6 +364,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (selectedValue) {
 			categorySelect.value = selectedValue;
 		}
+	}
+
+	function getEditingReminderId() {
+		return editingInput && editingInput.value ? String(editingInput.value) : '';
+	}
+
+	function getEditingReminderCompletedState(reminderId) {
+		var match = reminders.find(function (reminder) {
+			return String(reminder.id) === String(reminderId);
+		});
+
+		return match ? Boolean(match.is_completed) : false;
 	}
 
 	async function handleDeleteCategory(categoryId) {
@@ -385,6 +461,19 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		return date.toLocaleString();
+	}
+
+	function toDatetimeLocalValue(value) {
+		var date = new Date(value);
+
+		if (Number.isNaN(date.getTime())) {
+			return '';
+		}
+
+		var offset = date.getTimezoneOffset();
+		var localDate = new Date(date.getTime() - offset * 60000);
+
+		return localDate.toISOString().slice(0, 16);
 	}
 
 	function getCategoryName(categoryId) {

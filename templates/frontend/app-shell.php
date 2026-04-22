@@ -9,6 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<p class="remindmii-app-shell__intro"><?php echo esc_html__( 'Create and manage your reminders directly from WordPress.', 'remindmii' ); ?></p>
 	</div>
 	<div class="remindmii-app-shell__body">
+			<input type="hidden" data-remindmii-editing-id value="" />
 		<div class="remindmii-app-shell__status" data-remindmii-status aria-live="polite">
 			<?php echo esc_html__( 'Loading reminders...', 'remindmii' ); ?>
 		</div>
@@ -74,6 +75,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="remindmii-form__actions">
 				<button type="submit" class="remindmii-button" data-remindmii-submit>
 					<?php echo esc_html__( 'Create reminder', 'remindmii' ); ?>
+				</button>
+				<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-cancel-edit hidden>
+					<?php echo esc_html__( 'Cancel edit', 'remindmii' ); ?>
 				</button>
 			</div>
 		</form>
