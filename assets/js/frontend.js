@@ -13,7 +13,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	var loginLink = root.querySelector('[data-remindmii-login-link]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
+	var categoriesList = root.querySelector('[data-remindmii-categories]');
+	var categorySelect = root.querySelector('[data-remindmii-category-select]');
+	var categoryNameInput = root.querySelector('[data-remindmii-category-name]');
+	var categorySubmitButton = root.querySelector('[data-remindmii-category-submit]');
 	var submitButton = root.querySelector('[data-remindmii-submit]');
+	var categories = [];
 
 	if (!config.isLoggedIn) {
 		if (status) {
@@ -40,7 +45,25 @@ document.addEventListener('DOMContentLoaded', function () {
 		list.hidden = false;
 	}
 
-	loadReminders();
+	if (categoriesList) {
+		categoriesList.hidden = false;
+	}
+
+	if (categorySubmitButton) {
+		categorySubmitButton.addEventListener('click', handleCreateCategory);
+	}
+
+	loadCategories().then(loadReminders);
+
+	async function loadCategories() {
+		try {
+			var response = await apiRequest(config.categoriesUrl, { method: 'GET' });
+			categories = await response.json();
+			renderCategories(Array.isArray(categories) ? categories : []);
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		}
+	}
 
 	async function loadReminders() {
 		setStatus(config.i18n.loading, false);
@@ -81,6 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		var isRecurring = formData.get('is_recurring') === '1';
 		var payload = {
+			category_id: String(formData.get('category_id') || '').trim(),
 			title: title,
 			description: String(formData.get('description') || '').trim(),
 			reminder_date: reminderDate.toISOString(),
@@ -106,6 +130,46 @@ document.addEventListener('DOMContentLoaded', function () {
 		} finally {
 			submitButton.disabled = false;
 			submitButton.textContent = config.i18n.create;
+		}
+	}
+
+	async function handleCreateCategory() {
+		if (!categoryNameInput || !categorySubmitButton) {
+			return;
+		}
+
+		var name = String(categoryNameInput.value || '').trim();
+
+		if (!name) {
+			setStatus(config.i18n.categoryRequired, true);
+			return;
+		}
+
+		categorySubmitButton.disabled = true;
+		categorySubmitButton.textContent = config.i18n.creatingCategory;
+
+		try {
+			var response = await apiRequest(config.categoriesUrl, {
+				method: 'POST',
+				body: JSON.stringify({ name: name })
+			});
+
+			var category = await response.json();
+			categories.push(category);
+			categories.sort(function (left, right) {
+				return String(left.name || '').localeCompare(String(right.name || ''));
+			});
+			renderCategories(categories);
+			if (categorySelect) {
+				categorySelect.value = String(category.id);
+			}
+			categoryNameInput.value = '';
+			setStatus('', false);
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		} finally {
+			categorySubmitButton.disabled = false;
+			categorySubmitButton.textContent = config.i18n.createCategory;
 		}
 	}
 
@@ -162,11 +226,13 @@ document.addEventListener('DOMContentLoaded', function () {
 			item.className = 'remindmii-reminder' + (reminder.is_completed ? ' remindmii-reminder--completed' : '');
 
 			var dueDate = formatDate(reminder.reminder_date);
+			var categoryName = getCategoryName(reminder.category_id);
 			var description = reminder.description ? '<p class="remindmii-reminder__description">' + escapeHtml(reminder.description) + '</p>' : '';
 
 			item.innerHTML = '' +
 				'<div class="remindmii-reminder__content">' +
 					'<h3>' + escapeHtml(reminder.title || config.i18n.untitled) + '</h3>' +
+					'<p class="remindmii-reminder__meta"><strong>' + escapeHtml(config.i18n.categoryLabel) + ':</strong> ' + escapeHtml(categoryName) + '</p>' +
 					'<p class="remindmii-reminder__meta"><strong>' + escapeHtml(config.i18n.dueLabel) + ':</strong> ' + escapeHtml(dueDate) + '</p>' +
 					description +
 				'</div>' +
@@ -185,6 +251,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			list.appendChild(item);
 		});
+	}
+
+	function renderCategories(categoryItems) {
+		renderCategorySelect(categoryItems);
+
+		if (!categoriesList) {
+			return;
+		}
+
+		categoriesList.innerHTML = '';
+
+		if (!categoryItems.length) {
+			return;
+		}
+
+		categoryItems.forEach(function (category) {
+			var item = document.createElement('li');
+			item.className = 'remindmii-category';
+			item.innerHTML = '' +
+				'<span class="remindmii-category__swatch" style="background:' + escapeHtml(category.color || '#3B82F6') + ';"></span>' +
+				'<span class="remindmii-category__name">' + escapeHtml(category.name || config.i18n.noCategory) + '</span>' +
+				'<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-action="delete-category">' + escapeHtml(config.i18n.delete) + '</button>';
+
+			item.querySelector('[data-action="delete-category"]').addEventListener('click', function () {
+				handleDeleteCategory(category.id);
+			});
+
+			categoriesList.appendChild(item);
+		});
+	}
+
+	function renderCategorySelect(categoryItems) {
+		if (!categorySelect) {
+			return;
+		}
+
+		var selectedValue = categorySelect.value;
+		categorySelect.innerHTML = '<option value="">' + escapeHtml(config.i18n.noCategory) + '</option>';
+
+		categoryItems.forEach(function (category) {
+			var option = document.createElement('option');
+			option.value = String(category.id);
+			option.textContent = category.name || config.i18n.noCategory;
+			categorySelect.appendChild(option);
+		});
+
+		if (selectedValue) {
+			categorySelect.value = selectedValue;
+		}
+	}
+
+	async function handleDeleteCategory(categoryId) {
+		if (!window.confirm(config.i18n.confirmDeleteCategory)) {
+			return;
+		}
+
+		try {
+			await apiRequest(config.categoriesUrl + '/' + categoryId, { method: 'DELETE' });
+			categories = categories.filter(function (category) {
+				return String(category.id) !== String(categoryId);
+			});
+			renderCategories(categories);
+			await loadReminders();
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		}
 	}
 
 	async function apiRequest(url, options) {
@@ -253,6 +385,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		return date.toLocaleString();
+	}
+
+	function getCategoryName(categoryId) {
+		if (!categoryId) {
+			return config.i18n.noCategory;
+		}
+
+		var match = categories.find(function (category) {
+			return String(category.id) === String(categoryId);
+		});
+
+		return match && match.name ? match.name : config.i18n.noCategory;
 	}
 
 	function escapeHtml(value) {

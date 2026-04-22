@@ -6,6 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Remindmii_REST {
 	/**
+	 * Category controller instance.
+	 *
+	 * @var Remindmii_REST_Categories_Controller
+	 */
+	private $categories_controller;
+
+	/**
 	 * Reminder controller instance.
 	 *
 	 * @var Remindmii_REST_Reminders_Controller
@@ -16,8 +23,11 @@ class Remindmii_REST {
 	 * Constructor.
 	 */
 	public function __construct() {
+		$categories_repository      = new Remindmii_Categories_Repository();
+		$this->categories_controller = new Remindmii_REST_Categories_Controller( $categories_repository );
 		$this->reminders_controller = new Remindmii_REST_Reminders_Controller(
-			new Remindmii_Reminders_Repository()
+			new Remindmii_Reminders_Repository(),
+			$categories_repository
 		);
 	}
 
@@ -36,6 +46,7 @@ class Remindmii_REST {
 	 * @return void
 	 */
 	public function register_routes() {
+		$this->categories_controller->register_routes();
 		$this->reminders_controller->register_routes();
 
 		register_rest_route(

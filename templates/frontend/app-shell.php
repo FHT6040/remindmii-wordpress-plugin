@@ -27,9 +27,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<input type="text" name="title" maxlength="191" required />
 				</label>
 				<label class="remindmii-field">
+					<span><?php echo esc_html__( 'Category', 'remindmii' ); ?></span>
+					<select name="category_id" data-remindmii-category-select>
+						<option value=""><?php echo esc_html__( 'No category', 'remindmii' ); ?></option>
+					</select>
+				</label>
+			</div>
+
+			<div class="remindmii-field-group">
+				<label class="remindmii-field">
 					<span><?php echo esc_html__( 'Reminder date', 'remindmii' ); ?></span>
 					<input type="datetime-local" name="reminder_date" required />
 				</label>
+				<div class="remindmii-field remindmii-field--category-create">
+					<span><?php echo esc_html__( 'New category', 'remindmii' ); ?></span>
+					<div class="remindmii-inline-create">
+						<input type="text" name="new_category_name" maxlength="191" data-remindmii-category-name />
+						<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-category-submit>
+							<?php echo esc_html__( 'Add category', 'remindmii' ); ?>
+						</button>
+					</div>
+				</div>
 			</div>
 
 			<label class="remindmii-field">
@@ -61,5 +79,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</form>
 
 		<ul class="remindmii-reminders" data-remindmii-list hidden></ul>
+			<ul class="remindmii-categories" data-remindmii-categories hidden></ul>
 	</div>
 </div>

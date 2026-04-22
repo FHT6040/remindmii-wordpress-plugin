@@ -13,12 +13,21 @@ class Remindmii_REST_Reminders_Controller {
 	private $repository;
 
 	/**
+	 * Category repository.
+	 *
+	 * @var Remindmii_Categories_Repository
+	 */
+	private $categories_repository;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Remindmii_Reminders_Repository $repository Repository instance.
+	 * @param Remindmii_Reminders_Repository  $repository            Repository instance.
+	 * @param Remindmii_Categories_Repository $categories_repository Categories repository instance.
 	 */
-	public function __construct( $repository ) {
-		$this->repository = $repository;
+	public function __construct( $repository, $categories_repository ) {
+		$this->repository            = $repository;
+		$this->categories_repository = $categories_repository;
 	}
 
 	/**
@@ -185,6 +194,10 @@ class Remindmii_REST_Reminders_Controller {
 
 		$category_id = $request->get_param( 'category_id' );
 		$category_id = null === $category_id || '' === $category_id ? null : absint( $category_id );
+
+		if ( null !== $category_id && null === $this->categories_repository->get_by_id( $category_id, get_current_user_id() ) ) {
+			return new WP_Error( 'remindmii_invalid_category', __( 'The selected category is invalid.', 'remindmii' ), array( 'status' => 400 ) );
+		}
 
 		$recurrence_interval = $request->get_param( 'recurrence_interval' );
 		$recurrence_interval = is_string( $recurrence_interval ) ? sanitize_key( $recurrence_interval ) : null;
