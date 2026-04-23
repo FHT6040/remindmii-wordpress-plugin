@@ -79,6 +79,8 @@ class Remindmii_Shortcodes {
 					'refreshHistory'   => __( 'Refresh history', 'remindmii' ),
 					'refreshingHistory' => __( 'Refreshing history...', 'remindmii' ),
 					'statusLabel'      => __( 'Status', 'remindmii' ),
+					'openReminder'     => __( 'Open reminder', 'remindmii' ),
+					'reminderUnavailable' => __( 'The linked reminder is no longer available.', 'remindmii' ),
 					'sentAtLabel'      => __( 'Sent', 'remindmii' ),
 					'createdAtLabel'   => __( 'Logged', 'remindmii' ),
 					'statusPreview'    => __( 'Preview', 'remindmii' ),

@@ -343,6 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		reminders.forEach(function (reminder) {
 			var item = document.createElement('li');
 			item.className = 'remindmii-reminder' + (reminder.is_completed ? ' remindmii-reminder--completed' : '');
+			item.setAttribute('data-remindmii-reminder-id', String(reminder.id));
 
 			var dueDate = formatDate(reminder.reminder_date);
 			var categoryName = getCategoryName(reminder.category_id);
@@ -442,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			var timestampValue = formatDate(item.sent_at || item.created_at);
 			var title = item.title || item.message || config.i18n.notificationHistory;
 			var reminderDate = item.reminder_date ? '<p class="remindmii-notification__meta"><strong>' + escapeHtml(config.i18n.dueLabel) + ':</strong> ' + escapeHtml(formatDate(item.reminder_date)) + '</p>' : '';
+			var openReminderAction = item.reminder_id ? '<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-action="open-reminder">' + escapeHtml(config.i18n.openReminder) + '</button>' : '';
 
 			row.className = 'remindmii-notification remindmii-notification--' + escapeHtml(String(item.status || 'sent'));
 			row.innerHTML = '' +
@@ -451,10 +453,39 @@ document.addEventListener('DOMContentLoaded', function () {
 					'<p class="remindmii-notification__meta"><strong>' + escapeHtml(timestampLabel) + ':</strong> ' + escapeHtml(timestampValue) + '</p>' +
 					reminderDate +
 					'<p class="remindmii-notification__message">' + escapeHtml(item.message || '') + '</p>' +
+					(openReminderAction ? '<div class="remindmii-notification__actions">' + openReminderAction + '</div>' : '') +
 				'</div>';
+
+			if (item.reminder_id) {
+				row.querySelector('[data-action="open-reminder"]').addEventListener('click', function () {
+					focusReminder(item.reminder_id);
+				});
+			}
 
 			notificationsList.appendChild(row);
 		});
+	}
+
+	function focusReminder(reminderId) {
+		if (!list) {
+			setStatus(config.i18n.reminderUnavailable, true);
+			return;
+		}
+
+		var target = list.querySelector('[data-remindmii-reminder-id="' + cssEscape(String(reminderId)) + '"]');
+
+		if (!target) {
+			setStatus(config.i18n.reminderUnavailable, true);
+			return;
+		}
+
+		target.classList.remove('remindmii-reminder--highlight');
+		void target.offsetWidth;
+		target.classList.add('remindmii-reminder--highlight');
+		target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		window.setTimeout(function () {
+			target.classList.remove('remindmii-reminder--highlight');
+		}, 2200);
 	}
 
 	function getNotificationStatusLabel(status) {
@@ -672,5 +703,13 @@ document.addEventListener('DOMContentLoaded', function () {
 			.replace(/>/g, '&gt;')
 			.replace(/"/g, '&quot;')
 			.replace(/'/g, '&#039;');
+	}
+
+	function cssEscape(value) {
+		if (window.CSS && typeof window.CSS.escape === 'function') {
+			return window.CSS.escape(value);
+		}
+
+		return String(value).replace(/(["\\#.;:?+*~'!^$\[\]()=>|/@])/g, '\\$1');
 	}
 });
