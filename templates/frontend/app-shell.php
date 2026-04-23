@@ -179,6 +179,66 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<ul class="remindmii-reminders" data-remindmii-list hidden></ul>
 			<ul class="remindmii-categories" data-remindmii-categories hidden></ul>
 
+		<!-- Preferences panel -->
+		<div class="remindmii-preferences-panel" data-remindmii-preferences-panel hidden>
+			<h3><?php echo esc_html__( 'Preferences', 'remindmii' ); ?></h3>
+
+			<div class="remindmii-pref-section">
+				<h4><?php echo esc_html__( 'Appearance', 'remindmii' ); ?></h4>
+				<div class="remindmii-theme-grid" data-remindmii-theme-grid>
+					<?php
+					$themes = array(
+						'default'  => array( 'label' => __( 'Default', 'remindmii' ), 'icon' => '✨' ),
+						'light'    => array( 'label' => __( 'Light', 'remindmii' ), 'icon' => '☀️' ),
+						'dark'     => array( 'label' => __( 'Dark', 'remindmii' ), 'icon' => '🌙' ),
+						'romantic' => array( 'label' => __( 'Romantic', 'remindmii' ), 'icon' => '💕' ),
+					);
+					foreach ( $themes as $theme_id => $theme ) :
+					?>
+					<button type="button" class="remindmii-theme-btn" data-remindmii-theme="<?php echo esc_attr( $theme_id ); ?>">
+						<span class="remindmii-theme-btn__icon"><?php echo esc_html( $theme['icon'] ); ?></span>
+						<span><?php echo esc_html( $theme['label'] ); ?></span>
+					</button>
+					<?php endforeach; ?>
+				</div>
+			</div>
+
+			<div class="remindmii-pref-section">
+				<h4><?php echo esc_html__( 'Features', 'remindmii' ); ?></h4>
+
+				<div class="remindmii-toggle-row">
+					<div>
+						<strong><?php echo esc_html__( 'Location reminders', 'remindmii' ); ?></strong>
+						<p><?php echo esc_html__( 'Get notified when near relevant locations.', 'remindmii' ); ?></p>
+					</div>
+					<button type="button" class="remindmii-toggle" role="switch" data-remindmii-pref-toggle="enable_location_reminders" aria-checked="false"></button>
+				</div>
+
+				<div class="remindmii-toggle-row">
+					<div>
+						<strong><?php echo esc_html__( 'Gamification', 'remindmii' ); ?></strong>
+						<p><?php echo esc_html__( 'Track streaks, earn badges and see your progress.', 'remindmii' ); ?></p>
+					</div>
+					<button type="button" class="remindmii-toggle" role="switch" data-remindmii-pref-toggle="enable_gamification" aria-checked="false"></button>
+				</div>
+
+				<div class="remindmii-toggle-row">
+					<div>
+						<strong><?php echo esc_html__( 'Focus mode', 'remindmii' ); ?></strong>
+						<p><?php echo esc_html__( 'Simplify the interface to reduce distractions.', 'remindmii' ); ?></p>
+					</div>
+					<button type="button" class="remindmii-toggle" role="switch" data-remindmii-pref-toggle="distracted_mode" aria-checked="false"></button>
+				</div>
+			</div>
+
+			<div class="remindmii-form__actions">
+				<button type="button" class="remindmii-button" data-remindmii-preferences-save>
+					<?php echo esc_html__( 'Save preferences', 'remindmii' ); ?>
+				</button>
+			</div>
+			<p class="remindmii-pref-status" data-remindmii-preferences-status hidden></p>
+		</div>
+
 		<!-- Wishlist panel -->
 		<div class="remindmii-wishlists-panel" data-remindmii-wishlists-panel hidden>
 			<div class="remindmii-wishlists-header">

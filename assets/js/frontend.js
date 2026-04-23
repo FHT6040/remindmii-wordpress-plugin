@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	loadProfile();
+	loadPreferences();
 	loadNotificationHistory({ append: false });
 	loadCategories().then(loadReminders);
 
@@ -1403,6 +1404,110 @@ document.addEventListener('DOMContentLoaded', function () {
 		templatesModal.addEventListener('click', function (e) {
 			if ( e.target === templatesModal ) { templatesModal.hidden = true; }
 		});
+	}
+
+	// =========================================================================
+	// Preferences
+	// =========================================================================
+
+	var prefsPanel      = root.querySelector('[data-remindmii-preferences-panel]');
+	var prefsSaveBtn    = root.querySelector('[data-remindmii-preferences-save]');
+	var prefsStatusEl   = root.querySelector('[data-remindmii-preferences-status]');
+	var themeGrid       = root.querySelector('[data-remindmii-theme-grid]');
+
+	var currentPrefs = { theme: 'default', enable_location_reminders: false, enable_gamification: true, distracted_mode: false };
+
+	function loadPreferences() {
+		if ( ! config.preferencesUrl ) { return; }
+		fetch( config.preferencesUrl, {
+			headers: { 'X-WP-Nonce': config.restNonce }
+		} )
+		.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+		.then( function (data) {
+			currentPrefs = data;
+			renderPreferences(data);
+		} )
+		.catch( function () {} );
+	}
+
+	function renderPreferences(prefs) {
+		// Theme buttons.
+		if ( themeGrid ) {
+			themeGrid.querySelectorAll('[data-remindmii-theme]').forEach( function (btn) {
+				btn.classList.toggle('is-active', btn.getAttribute('data-remindmii-theme') === prefs.theme);
+			} );
+		}
+		// Toggle buttons.
+		if ( prefsPanel ) {
+			['enable_location_reminders', 'enable_gamification', 'distracted_mode'].forEach( function (key) {
+				var btn = prefsPanel.querySelector('[data-remindmii-pref-toggle="' + key + '"]');
+				if ( btn ) {
+					var val = !!prefs[key];
+					btn.setAttribute('aria-checked', val ? 'true' : 'false');
+					btn.classList.toggle('is-on', val);
+				}
+			} );
+		}
+	}
+
+	if ( themeGrid ) {
+		themeGrid.addEventListener('click', function (e) {
+			var btn = e.target.closest('[data-remindmii-theme]');
+			if ( ! btn ) { return; }
+			currentPrefs.theme = btn.getAttribute('data-remindmii-theme');
+			renderPreferences(currentPrefs);
+		} );
+	}
+
+	if ( prefsPanel ) {
+		prefsPanel.querySelectorAll('[data-remindmii-pref-toggle]').forEach( function (btn) {
+			btn.addEventListener('click', function () {
+				var key = btn.getAttribute('data-remindmii-pref-toggle');
+				currentPrefs[key] = ! currentPrefs[key];
+				btn.setAttribute('aria-checked', currentPrefs[key] ? 'true' : 'false');
+				btn.classList.toggle('is-on', currentPrefs[key]);
+			} );
+		} );
+	}
+
+	if ( prefsSaveBtn ) {
+		prefsSaveBtn.addEventListener('click', function () {
+			if ( ! config.preferencesUrl ) { return; }
+			prefsSaveBtn.textContent = config.i18n.savingPreferences || 'Saving...';
+			fetch( config.preferencesUrl, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': config.restNonce
+				},
+				body: JSON.stringify(currentPrefs)
+			} )
+			.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+			.then( function (data) {
+				currentPrefs = data;
+				renderPreferences(data);
+				applyThemeClass(data.theme);
+				prefsSaveBtn.textContent = config.i18n.savePreferences || 'Save preferences';
+				if ( prefsStatusEl ) {
+					prefsStatusEl.textContent = config.i18n.preferencesSaved || 'Preferences saved.';
+					prefsStatusEl.hidden = false;
+					setTimeout( function () { prefsStatusEl.hidden = true; }, 3000 );
+				}
+			} )
+			.catch( function () {
+				prefsSaveBtn.textContent = config.i18n.savePreferences || 'Save preferences';
+				if ( prefsStatusEl ) {
+					prefsStatusEl.textContent = config.i18n.genericError || 'Error';
+					prefsStatusEl.hidden = false;
+				}
+			} );
+		} );
+	}
+
+	function applyThemeClass(theme) {
+		var appEl = document.querySelector('[data-remindmii-app]');
+		if ( ! appEl ) { return; }
+		appEl.setAttribute('data-remindmii-theme', theme || 'default');
 	}
 
 	function escapeHtml(value) {

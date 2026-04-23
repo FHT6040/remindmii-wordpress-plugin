@@ -607,3 +607,106 @@
 	font-size: 0.8rem;
 	color: #64748b;
 }
+
+/* ==========================================================================
+   Preferences
+   ========================================================================== */
+
+.remindmii-preferences-panel { margin-top: 1.5rem; }
+
+.remindmii-pref-section { margin-bottom: 1.5rem; }
+
+.remindmii-pref-section h4 { margin-bottom: 0.75rem; }
+
+.remindmii-theme-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.5rem;
+}
+
+@media (min-width: 480px) {
+	.remindmii-theme-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.remindmii-theme-btn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.75rem 0.5rem;
+	border: 2px solid #e2e8f0;
+	border-radius: 0.5rem;
+	background: #f8faff;
+	cursor: pointer;
+	font-size: 0.875rem;
+	transition: border-color 0.15s, background 0.15s;
+}
+
+.remindmii-theme-btn__icon { font-size: 1.5rem; }
+
+.remindmii-theme-btn:hover { border-color: #93c5fd; background: #eff6ff; }
+
+.remindmii-theme-btn.is-active {
+	border-color: #2563eb;
+	background: #eff6ff;
+	font-weight: 600;
+}
+
+.remindmii-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.75rem 0;
+	border-bottom: 1px solid #f1f5f9;
+}
+
+.remindmii-toggle-row:last-child { border-bottom: none; }
+
+.remindmii-toggle-row > div > p {
+	margin: 0;
+	font-size: 0.8rem;
+	color: #64748b;
+}
+
+.remindmii-toggle {
+	flex-shrink: 0;
+	width: 3rem;
+	height: 1.6rem;
+	border-radius: 999px;
+	border: none;
+	background: #cbd5e1;
+	position: relative;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.remindmii-toggle::after {
+	content: '';
+	position: absolute;
+	top: 0.2rem;
+	left: 0.2rem;
+	width: 1.2rem;
+	height: 1.2rem;
+	border-radius: 50%;
+	background: #fff;
+	transition: transform 0.2s;
+}
+
+.remindmii-toggle.is-on {
+	background: #2563eb;
+}
+
+.remindmii-toggle.is-on::after {
+	transform: translateX(1.4rem);
+}
+
+.remindmii-pref-status {
+	font-size: 0.875rem;
+	color: #16a34a;
+	margin-top: 0.5rem;
+}
+
+/* Theme data-attribute overrides */
+[data-remindmii-theme="dark"] { filter: invert(1) hue-rotate(180deg); }
+[data-remindmii-theme="romantic"] { --remindmii-accent: #e11d48; }
