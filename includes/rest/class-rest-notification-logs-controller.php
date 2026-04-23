@@ -67,15 +67,19 @@ class Remindmii_REST_Notification_Logs_Controller {
 		$limit      = $limit > 0 ? $limit : 10;
 		$offset     = $offset > 0 ? $offset : 0;
 		$since_days = in_array( $since_days, array( 7, 30 ), true ) ? $since_days : 0;
-		$items      = $this->repository->get_recent_by_user( get_current_user_id(), $limit, $offset, $since_days, $search );
+		$user_id    = get_current_user_id();
+		$items      = $this->repository->get_recent_by_user( $user_id, $limit, $offset, $since_days, $search );
+		$total      = $this->repository->count_recent_by_user( $user_id, $since_days, $search );
+		$next_offset = $offset + count( $items );
 
 		return rest_ensure_response(
 			array(
 				'items'      => $items,
 				'count'      => count( $items ),
+				'total_count'=> $total,
 				'offset'     => $offset,
-				'next_offset'=> $offset + count( $items ),
-				'has_more'   => count( $items ) === $limit,
+				'next_offset'=> $next_offset,
+				'has_more'   => $next_offset < $total,
 			)
 		);
 	}

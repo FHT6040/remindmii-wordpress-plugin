@@ -6,6 +6,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Remindmii_Notification_Logs_Repository {
 	/**
+	 * Build SQL where clause and args for history queries.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $since_days Optional date window.
+	 * @param string $search Optional text query.
+	 * @return array{where_clause:string, query_args:array<int, mixed>}
+	 */
+	private function build_filters( $user_id, $since_days, $search ) {
+		global $wpdb;
+
+		$where_clause = 'WHERE user_id = %d';
+		$query_args   = array( $user_id );
+
+		if ( $since_days > 0 ) {
+			$since_timestamp = gmdate( 'Y-m-d H:i:s', time() - ( $since_days * 86400 ) );
+			$where_clause   .= ' AND created_at >= %s';
+			$query_args[]    = $since_timestamp;
+		}
+
+		if ( '' !== $search ) {
+			$like_value      = '%' . $wpdb->esc_like( $search ) . '%';
+			$where_clause   .= ' AND (message LIKE %s OR context LIKE %s)';
+			$query_args[]    = $like_value;
+			$query_args[]    = $like_value;
+		}
+
+		return array(
+			'where_clause' => $where_clause,
+			'query_args'   => $query_args,
+		);
+	}
+
+	/**
 	 * Return notification logs table name.
 	 *
 	 * @return string
@@ -39,21 +72,9 @@ class Remindmii_Notification_Logs_Repository {
 			return array();
 		}
 
-		$where_clause = 'WHERE user_id = %d';
-		$query_args   = array( $user_id );
-
-		if ( $since_days > 0 ) {
-			$since_timestamp = gmdate( 'Y-m-d H:i:s', time() - ( $since_days * 86400 ) );
-			$where_clause   .= ' AND created_at >= %s';
-			$query_args[]    = $since_timestamp;
-		}
-
-		if ( '' !== $search ) {
-			$like_value      = '%' . $wpdb->esc_like( $search ) . '%';
-			$where_clause   .= ' AND (message LIKE %s OR context LIKE %s)';
-			$query_args[]    = $like_value;
-			$query_args[]    = $like_value;
-		}
+		$filters      = $this->build_filters( $user_id, $since_days, $search );
+		$where_clause = $filters['where_clause'];
+		$query_args   = $filters['query_args'];
 
 		$query_args[] = $limit;
 		$query_args[] = $offset;
@@ -70,6 +91,38 @@ class Remindmii_Notification_Logs_Repository {
 		);
 
 		return is_array( $results ) ? array_map( array( $this, 'map_record' ), $results ) : array();
+	}
+
+	/**
+	 * Count matching notification log entries for a user.
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @param int $since_days Optional date window in days (0 for all).
+	 * @param string $search Optional text search against message/context.
+	 * @return int
+	 */
+	public function count_recent_by_user( $user_id, $since_days = 0, $search = '' ) {
+		global $wpdb;
+
+		$user_id    = absint( $user_id );
+		$since_days = in_array( absint( $since_days ), array( 7, 30 ), true ) ? absint( $since_days ) : 0;
+		$search     = trim( (string) $search );
+
+		if ( $user_id <= 0 ) {
+			return 0;
+		}
+
+		$filters      = $this->build_filters( $user_id, $since_days, $search );
+		$where_clause = $filters['where_clause'];
+		$query_args   = $filters['query_args'];
+
+		$sql = "SELECT COUNT(*)
+				FROM {$this->table_name()}
+				{$where_clause}";
+
+		$count = $wpdb->get_var( $wpdb->prepare( $sql, ...$query_args ) );
+
+		return null === $count ? 0 : (int) $count;
 	}
 
 	/**

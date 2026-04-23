@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var reminders = [];
 	var notificationItems = [];
 	var notificationOffset = 0;
+	var notificationTotalCount = 0;
 	var notificationsLimit = 10;
 	var notificationsHasMore = false;
 	var notificationsSearchTimer = null;
@@ -172,6 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			var items = payload && Array.isArray(payload.items) ? payload.items : [];
 
 			notificationItems = append ? notificationItems.concat(items) : items;
+			notificationTotalCount = payload && typeof payload.total_count === 'number' ? payload.total_count : notificationItems.length;
 			notificationOffset = payload && typeof payload.next_offset === 'number' ? payload.next_offset : notificationItems.length;
 			notificationsHasMore = Boolean(payload && payload.has_more);
 			renderNotifications(notificationItems);
@@ -180,6 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (!append) {
 				notificationItems = [];
 				notificationOffset = 0;
+				notificationTotalCount = 0;
 				notificationsHasMore = false;
 			}
 			renderNotifications(notificationItems);
@@ -502,7 +505,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		if (!visibleItems.length) {
 			notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.noNotifications) + '</p></li>';
-			updateNotificationsCount(0, items.length);
+			updateNotificationsCount(0, notificationTotalCount);
 			return;
 		}
 
@@ -535,7 +538,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			notificationsList.appendChild(row);
 		});
 
-		updateNotificationsCount(visibleItems.length, items.length);
+		updateNotificationsCount(visibleItems.length, notificationTotalCount);
 	}
 
 	function getVisibleNotificationItems(items) {
