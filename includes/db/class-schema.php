@@ -146,5 +146,24 @@ class Remindmii_DB_Schema {
 		dbDelta( $notifications_log_sql );
 		dbDelta( $wishlists_sql );
 		dbDelta( $wishlist_items_sql );
+
+		$wishlist_shares_table = $wpdb->prefix . 'remindmii_wishlist_shares';
+		$wishlist_shares_sql   = "CREATE TABLE {$wishlist_shares_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			wishlist_id bigint(20) unsigned NOT NULL,
+			owner_id bigint(20) unsigned NOT NULL,
+			shared_with_email varchar(191) NOT NULL,
+			shared_with_user_id bigint(20) unsigned NULL,
+			permission varchar(20) NOT NULL DEFAULT 'view',
+			token varchar(64) NOT NULL,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY wishlist_id (wishlist_id),
+			KEY owner_id (owner_id),
+			KEY shared_with_user_id (shared_with_user_id),
+			UNIQUE KEY token (token)
+		) {$charset_collate};";
+
+		dbDelta( $wishlist_shares_sql );
 	}
 }

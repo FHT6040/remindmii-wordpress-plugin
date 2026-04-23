@@ -239,6 +239,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<p class="remindmii-pref-status" data-remindmii-preferences-status hidden></p>
 		</div>
 
+		<!-- Shared lists panel -->
+		<div class="remindmii-shared-panel" data-remindmii-shared-panel hidden>
+			<h3><?php echo esc_html__( 'Shared with me', 'remindmii' ); ?></h3>
+			<div class="remindmii-shared-list" data-remindmii-shared-list>
+				<p><?php echo esc_html__( 'Loading...', 'remindmii' ); ?></p>
+			</div>
+
+			<h3 style="margin-top:1.5rem"><?php echo esc_html__( 'Share a wishlist', 'remindmii' ); ?></h3>
+			<p class="remindmii-muted"><?php echo esc_html__( 'Open a wishlist to share it with others.', 'remindmii' ); ?></p>
+		</div>
+
 		<!-- Wishlist panel -->
 		<div class="remindmii-wishlists-panel" data-remindmii-wishlists-panel hidden>
 			<div class="remindmii-wishlists-header">
@@ -336,6 +347,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 				<p class="remindmii-app-shell__status" data-remindmii-items-status hidden></p>
 				<ul class="remindmii-items-list" data-remindmii-items-list></ul>
+
+				<!-- Share section -->
+				<div class="remindmii-wishlist-shares" data-remindmii-wishlist-shares hidden>
+					<h4><?php echo esc_html__( 'Sharing', 'remindmii' ); ?></h4>
+					<ul class="remindmii-shares-list" data-remindmii-shares-list></ul>
+					<form class="remindmii-share-form" data-remindmii-share-form>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Share with (email)', 'remindmii' ); ?></span>
+							<input type="email" name="share_email" maxlength="191" required placeholder="<?php echo esc_attr__( 'friend@example.com', 'remindmii' ); ?>" />
+						</label>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Permission', 'remindmii' ); ?></span>
+							<select name="share_permission">
+								<option value="view"><?php echo esc_html__( 'View', 'remindmii' ); ?></option>
+								<option value="edit"><?php echo esc_html__( 'Edit', 'remindmii' ); ?></option>
+							</select>
+						</label>
+						<div class="remindmii-form__actions">
+							<button type="submit" class="remindmii-button" data-remindmii-share-submit>
+								<?php echo esc_html__( 'Share', 'remindmii' ); ?>
+							</button>
+						</div>
+					</form>
+					<p class="remindmii-app-shell__status" data-remindmii-shares-status hidden></p>
+				</div>
 			</div>
 		</div>
 		<!-- Template picker modal -->

@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	loadProfile();
 	loadPreferences();
+	loadSharedWithMe();
 	loadNotificationHistory({ append: false });
 	loadCategories().then(loadReminders);
 
@@ -1025,6 +1026,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (wishlistDetailEl) { wishlistDetailEl.hidden = false; }
 
 		loadWishlistItems(wl.id);
+
+		// Load sharing section.
+		currentWishlistIdForShares = wl.id;
+		if ( sharesSection ) { sharesSection.hidden = false; }
+		loadWishlistShares(wl.id);
 	}
 
 	function loadWishlistItems(wlId) {
@@ -1508,6 +1514,120 @@ document.addEventListener('DOMContentLoaded', function () {
 		var appEl = document.querySelector('[data-remindmii-app]');
 		if ( ! appEl ) { return; }
 		appEl.setAttribute('data-remindmii-theme', theme || 'default');
+	}
+
+	// =========================================================================
+	// Shared lists (shared-with-me + share per wishlist)
+	// =========================================================================
+
+	var sharedPanel    = root.querySelector('[data-remindmii-shared-panel]');
+	var sharedListEl   = root.querySelector('[data-remindmii-shared-list]');
+	var sharesListEl   = root.querySelector('[data-remindmii-shares-list]');
+	var sharesSection  = root.querySelector('[data-remindmii-wishlist-shares]');
+	var shareForm      = root.querySelector('[data-remindmii-share-form]');
+	var sharesStatus   = root.querySelector('[data-remindmii-shares-status]');
+	var currentWishlistIdForShares = null;
+
+	function loadSharedWithMe() {
+		if ( ! config.sharedWithMeUrl || ! sharedListEl ) { return; }
+		sharedListEl.innerHTML = '<p>' + ( config.i18n.loadingSharedLists || 'Loading...' ) + '</p>';
+		fetch( config.sharedWithMeUrl, {
+			headers: { 'X-WP-Nonce': config.restNonce }
+		} )
+		.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+		.then( function (data) {
+			var shares = data.shares || [];
+			if ( shares.length === 0 ) {
+				sharedListEl.innerHTML = '<p>' + ( config.i18n.noSharedLists || 'No lists shared with you yet.' ) + '</p>';
+				return;
+			}
+			var html = '<ul class="remindmii-shared-items">';
+			shares.forEach( function (s) {
+				html += '<li><strong>' + escapeHtml( s.wishlist_title || '' ) + '</strong>';
+				if ( s.wishlist_description ) { html += '<br><small>' + escapeHtml( s.wishlist_description ) + '</small>'; }
+				html += '<br><small>' + escapeHtml( s.permission ) + ' — ' + escapeHtml( s.shared_with_email ) + '</small></li>';
+			} );
+			html += '</ul>';
+			sharedListEl.innerHTML = html;
+		} )
+		.catch( function () {
+			sharedListEl.innerHTML = '<p>' + ( config.i18n.genericError || 'Error' ) + '</p>';
+		} );
+	}
+
+	function loadWishlistShares( wishlistId ) {
+		if ( ! sharesListEl ) { return; }
+		var url = config.wishlistsUrl + '/' + wishlistId + '/shares';
+		fetch( url, { headers: { 'X-WP-Nonce': config.restNonce } } )
+		.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+		.then( function (data) {
+			renderSharesList( data.shares || [] );
+		} )
+		.catch( function () {} );
+	}
+
+	function renderSharesList( shares ) {
+		if ( ! sharesListEl ) { return; }
+		if ( shares.length === 0 ) {
+			sharesListEl.innerHTML = '';
+			return;
+		}
+		var html = '';
+		shares.forEach( function (s) {
+			html += '<li class="remindmii-share-item">' +
+				escapeHtml( s.shared_with_email ) +
+				' <span class="remindmii-badge">' + escapeHtml( s.permission ) + '</span>' +
+				' <button type="button" class="remindmii-button remindmii-button--danger remindmii-button--sm" data-revoke-share="' + s.id + '">' +
+				( config.i18n.revokeShare || 'Revoke' ) +
+				'</button></li>';
+		} );
+		sharesListEl.innerHTML = html;
+	}
+
+	if ( sharesListEl ) {
+		sharesListEl.addEventListener('click', function (e) {
+			var btn = e.target.closest('[data-revoke-share]');
+			if ( ! btn || ! currentWishlistIdForShares ) { return; }
+			var shareId = btn.getAttribute('data-revoke-share');
+			var url = config.wishlistsUrl + '/' + currentWishlistIdForShares + '/shares/' + shareId;
+			fetch( url, { method: 'DELETE', headers: { 'X-WP-Nonce': config.restNonce } } )
+			.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+			.then( function () { loadWishlistShares( currentWishlistIdForShares ); } )
+			.catch( function () {} );
+		} );
+	}
+
+	if ( shareForm ) {
+		shareForm.addEventListener('submit', function (e) {
+			e.preventDefault();
+			if ( ! currentWishlistIdForShares ) { return; }
+			var email      = shareForm.querySelector('[name="share_email"]').value.trim();
+			var permission = shareForm.querySelector('[name="share_permission"]').value;
+			var submitBtn  = shareForm.querySelector('[data-remindmii-share-submit]');
+			if ( submitBtn ) { submitBtn.disabled = true; }
+
+			var url = config.wishlistsUrl + '/' + currentWishlistIdForShares + '/shares';
+			fetch( url, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': config.restNonce },
+				body: JSON.stringify( { shared_with_email: email, permission: permission } )
+			} )
+			.then( function (r) { return r.ok ? r.json() : r.json().then( function (e) { return Promise.reject(e); } ); } )
+			.then( function () {
+				shareForm.reset();
+				loadWishlistShares( currentWishlistIdForShares );
+				if ( sharesStatus ) { sharesStatus.textContent = ''; sharesStatus.hidden = true; }
+			} )
+			.catch( function (err) {
+				if ( sharesStatus ) {
+					sharesStatus.textContent = ( err && err.message ) || ( config.i18n.genericError || 'Error' );
+					sharesStatus.hidden = false;
+				}
+			} )
+			.finally( function () {
+				if ( submitBtn ) { submitBtn.disabled = false; }
+			} );
+		} );
 	}
 
 	function escapeHtml(value) {

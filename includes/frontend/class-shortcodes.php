@@ -31,7 +31,10 @@ class Remindmii_Shortcodes {
 				'notificationsExportUrl' => esc_url_raw( rest_url( 'remindmii/v1/notifications/export' ) ),
 				'profileUrl'   => esc_url_raw( rest_url( 'remindmii/v1/profile' ) ),
 				'wishlistsUrl' => esc_url_raw( rest_url( 'remindmii/v1/wishlists' ) ),
-				'templatesUrl' => esc_url_raw( rest_url( 'remindmii/v1/templates' ) ),				'preferencesUrl' => esc_url_raw( rest_url( 'remindmii/v1/preferences' ) ),				'restNonce'    => wp_create_nonce( 'wp_rest' ),
+				'templatesUrl'    => esc_url_raw( rest_url( 'remindmii/v1/templates' ) ),
+				'preferencesUrl'  => esc_url_raw( rest_url( 'remindmii/v1/preferences' ) ),
+				'sharedWithMeUrl' => esc_url_raw( rest_url( 'remindmii/v1/shared-with-me' ) ),
+				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
 				'i18n'         => array(
@@ -167,6 +170,17 @@ class Remindmii_Shortcodes {
 					'savingPreferences'         => __( 'Saving...', 'remindmii' ),
 					'preferencesSaved'          => __( 'Preferences saved.', 'remindmii' ),
 					'loadingPreferences'        => __( 'Loading preferences...', 'remindmii' ),
+					// Shared lists.
+					'sharedListsHeading'        => __( 'Shared with me', 'remindmii' ),
+					'sharingHeading'            => __( 'Share this wishlist', 'remindmii' ),
+					'shareEmailPlaceholder'     => __( 'Email address', 'remindmii' ),
+					'sharePermissionView'       => __( 'View', 'remindmii' ),
+					'sharePermissionEdit'       => __( 'Edit', 'remindmii' ),
+					'shareBtn'                  => __( 'Share', 'remindmii' ),
+					'sharingBtn'                => __( 'Sharing...', 'remindmii' ),
+					'revokeShare'               => __( 'Revoke', 'remindmii' ),
+					'noSharedLists'             => __( 'No lists shared with you yet.', 'remindmii' ),
+					'loadingSharedLists'        => __( 'Loading...', 'remindmii' ),
 				),
 			)
 		);
