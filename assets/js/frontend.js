@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	if (notificationsFilter) {
 		notificationsFilter.addEventListener('change', function () {
-			renderNotifications(notificationItems);
+			loadNotificationHistory({ append: false });
 		});
 	}
 
@@ -138,11 +138,16 @@ document.addEventListener('DOMContentLoaded', function () {
 		var isManualRefresh = Boolean(options.manualRefresh);
 		var requestOffset = append ? notificationOffset : 0;
 		var sinceDays = notificationsDateFilter ? parseInt(notificationsDateFilter.value || '0', 10) : 0;
+		var statusFilter = notificationsFilter ? String(notificationsFilter.value || 'all').trim().toLowerCase() : 'all';
 		var searchQuery = notificationsSearchInput ? String(notificationsSearchInput.value || '').trim() : '';
 		var notificationsUrl = config.notificationsUrl + '?limit=' + notificationsLimit + '&offset=' + requestOffset;
 
 		if (sinceDays > 0) {
 			notificationsUrl += '&since_days=' + sinceDays;
+		}
+
+		if (statusFilter !== 'all') {
+			notificationsUrl += '&status=' + encodeURIComponent(statusFilter);
 		}
 
 		if (searchQuery) {
@@ -161,6 +166,11 @@ document.addEventListener('DOMContentLoaded', function () {
 		if (notificationsLoadMoreButton) {
 			notificationsLoadMoreButton.disabled = true;
 			notificationsLoadMoreButton.textContent = config.i18n.loadingMoreHistory;
+		}
+
+		if (notificationsExportButton) {
+			notificationsExportButton.disabled = true;
+			notificationsExportButton.textContent = config.i18n.exportingHistory || config.i18n.exportHistory;
 		}
 
 		if (!append) {
@@ -197,6 +207,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			if (notificationsLoadMoreButton) {
 				notificationsLoadMoreButton.disabled = false;
 				notificationsLoadMoreButton.textContent = config.i18n.loadMoreHistory;
+			}
+
+			if (notificationsExportButton) {
+				notificationsExportButton.disabled = false;
+				notificationsExportButton.textContent = config.i18n.exportHistory;
 			}
 		}
 	}
@@ -542,59 +557,71 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function getVisibleNotificationItems(items) {
-		var activeFilter = notificationsFilter ? String(notificationsFilter.value || 'all') : 'all';
-
-		return items.filter(function (item) {
-			if (activeFilter === 'all') {
-				return true;
-			}
-
-			return String(item.status || '').toLowerCase() === activeFilter;
-		});
+		return Array.isArray(items) ? items : [];
 	}
 
-	function exportNotificationsCsv() {
-		var visibleItems = getVisibleNotificationItems(notificationItems);
-
-		if (!visibleItems.length) {
-			setStatus(config.i18n.noNotificationsToExport, true);
+	async function exportNotificationsCsv() {
+		if (!notificationsExportButton) {
 			return;
 		}
 
-		var csvLines = [
-			['id', 'status', 'channel', 'title', 'message', 'sent_at', 'created_at', 'reminder_id', 'reminder_date'].join(',')
-		];
+		var sinceDays = notificationsDateFilter ? parseInt(notificationsDateFilter.value || '0', 10) : 0;
+		var statusFilter = notificationsFilter ? String(notificationsFilter.value || 'all').trim().toLowerCase() : 'all';
+		var searchQuery = notificationsSearchInput ? String(notificationsSearchInput.value || '').trim() : '';
+		var exportUrl = config.notificationsExportUrl;
+		var query = [];
 
-		visibleItems.forEach(function (item) {
-			csvLines.push([
-				csvCell(item.id),
-				csvCell(item.status),
-				csvCell(item.channel),
-				csvCell(item.title),
-				csvCell(item.message),
-				csvCell(item.sent_at),
-				csvCell(item.created_at),
-				csvCell(item.reminder_id),
-				csvCell(item.reminder_date)
-			].join(','));
-		});
+		if (sinceDays > 0) {
+			query.push('since_days=' + encodeURIComponent(String(sinceDays)));
+		}
 
-		var blob = new window.Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
-		var downloadUrl = window.URL.createObjectURL(blob);
-		var link = document.createElement('a');
-		var dateStamp = new Date().toISOString().slice(0, 10);
+		if (statusFilter !== 'all') {
+			query.push('status=' + encodeURIComponent(statusFilter));
+		}
 
-		link.href = downloadUrl;
-		link.download = 'remindmii-notifications-' + dateStamp + '.csv';
-		document.body.appendChild(link);
-		link.click();
-		document.body.removeChild(link);
-		window.URL.revokeObjectURL(downloadUrl);
-	}
+		if (searchQuery) {
+			query.push('q=' + encodeURIComponent(searchQuery));
+		}
 
-	function csvCell(value) {
-		var text = String(value == null ? '' : value);
-		return '"' + text.replace(/"/g, '""') + '"';
+		if (query.length) {
+			exportUrl += '?' + query.join('&');
+		}
+
+		notificationsExportButton.disabled = true;
+		notificationsExportButton.textContent = config.i18n.exportingHistory || config.i18n.exportHistory;
+
+		try {
+			var response = await window.fetch(exportUrl, {
+				method: 'GET',
+				credentials: 'same-origin',
+				headers: {
+					'X-WP-Nonce': config.restNonce
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(config.i18n.genericError);
+			}
+
+			var contentDisposition = response.headers.get('Content-Disposition') || '';
+			var filenameMatch = /filename="?([^";]+)"?/i.exec(contentDisposition);
+			var filename = filenameMatch && filenameMatch[1] ? filenameMatch[1] : 'remindmii-notifications.csv';
+			var blob = await response.blob();
+			var downloadUrl = window.URL.createObjectURL(blob);
+			var link = document.createElement('a');
+
+			link.href = downloadUrl;
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(downloadUrl);
+		} catch (error) {
+			setStatus(getErrorMessage(error), true);
+		} finally {
+			notificationsExportButton.disabled = false;
+			notificationsExportButton.textContent = config.i18n.exportHistory;
+		}
 	}
 
 	function updateNotificationsCount(visibleCount, loadedCount) {
