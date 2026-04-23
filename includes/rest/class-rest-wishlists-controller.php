@@ -115,6 +115,17 @@ class Remindmii_REST_Wishlists_Controller {
 				'permission_callback' => array( $this, 'require_logged_in' ),
 			)
 		);
+
+		// Public view by share token (no auth).
+		register_rest_route(
+			$ns,
+			'/public/wishlists/(?P<token>[a-f0-9]{32})',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_public_wishlist' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -371,6 +382,32 @@ class Remindmii_REST_Wishlists_Controller {
 	// -------------------------------------------------------------------------
 	// Permissions
 	// -------------------------------------------------------------------------
+
+	/**
+	 * GET /public/wishlists/{token}
+	 *
+	 * Returns wishlist metadata and items for anonymous/public access.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_public_wishlist( $request ) {
+		$token    = sanitize_text_field( (string) $request['token'] );
+		$wishlist = $this->repo->get_by_token( $token );
+
+		if ( ! $wishlist ) {
+			return new WP_Error( 'not_found', __( 'Wishlist not found or not public.', 'remindmii' ), array( 'status' => 404 ) );
+		}
+
+		$items = $this->repo->get_items_public( $wishlist['id'] );
+
+		return rest_ensure_response(
+			array(
+				'wishlist' => $wishlist,
+				'items'    => $items,
+			)
+		);
+	}
 
 	/**
 	 * Permission: must be logged in.

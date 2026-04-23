@@ -12,6 +12,7 @@ class Remindmii_Shortcodes {
 	 */
 	public function register_hooks() {
 		add_shortcode( 'remindmii_app', array( $this, 'render_app' ) );
+		add_shortcode( 'remindmii_public_wishlist', array( $this, 'render_public_wishlist' ) );
 	}
 
 	/**
@@ -140,6 +141,46 @@ class Remindmii_Shortcodes {
 
 		ob_start();
 		require REMINDMII_PLUGIN_DIR . 'templates/frontend/app-shell.php';
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Render public wishlist view.
+	 *
+	 * @param array<string, mixed> $atts Shortcode attributes.
+	 * @return string
+	 */
+	public function render_public_wishlist( $atts ) {
+		$atts  = shortcode_atts( array( 'token' => '' ), $atts, 'remindmii_public_wishlist' );
+		$token = sanitize_text_field( $atts['token'] );
+
+		// Fall back to query string (?remindmii_wishlist=...).
+		if ( '' === $token && isset( $_GET['remindmii_wishlist'] ) ) {
+			$token = sanitize_text_field( (string) wp_unslash( $_GET['remindmii_wishlist'] ) );
+		}
+
+		wp_localize_script(
+			'remindmii-frontend',
+			'remindmiiPublicWishlist',
+			array(
+				'token'      => $token,
+				'apiUrl'     => esc_url_raw( rest_url( 'remindmii/v1/public/wishlists/' . $token ) ),
+				'i18n'       => array(
+					'loading'        => __( 'Loading wishlist...', 'remindmii' ),
+					'notFound'       => __( 'Wishlist not found or not public.', 'remindmii' ),
+					'noItems'        => __( 'No items on this wishlist yet.', 'remindmii' ),
+					'purchased'      => __( 'Purchased', 'remindmii' ),
+					'priceLabel'     => __( 'Price', 'remindmii' ),
+					'viewLink'       => __( 'View', 'remindmii' ),
+				),
+			)
+		);
+
+		wp_enqueue_style( 'remindmii-frontend' );
+		wp_enqueue_script( 'remindmii-frontend' );
+
+		ob_start();
+		require REMINDMII_PLUGIN_DIR . 'templates/frontend/public-wishlist.php';
 		return (string) ob_get_clean();
 	}
 }

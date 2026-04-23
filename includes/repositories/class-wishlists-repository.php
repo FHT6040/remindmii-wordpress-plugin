@@ -80,6 +80,57 @@ class Remindmii_Wishlists_Repository {
 	}
 
 	/**
+	 * Get a public wishlist by its share token (no user check).
+	 *
+	 * @param string $token Public token.
+	 * @return array<string, mixed>|null
+	 */
+	public function get_by_token( $token ) {
+		global $wpdb;
+
+		$token = sanitize_text_field( (string) $token );
+
+		if ( '' === $token ) {
+			return null;
+		}
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, user_id, title, description, is_public, public_token, created_at, updated_at
+				FROM {$this->wishlists_table()}
+				WHERE public_token = %s AND is_public = 1",
+				$token
+			),
+			ARRAY_A
+		);
+
+		return $row ? $this->map_wishlist( $row ) : null;
+	}
+
+	/**
+	 * Get all items for a wishlist by wishlist ID only (no user check — for public view).
+	 *
+	 * @param int $wishlist_id Wishlist ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function get_items_public( $wishlist_id ) {
+		global $wpdb;
+
+		$results = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, wishlist_id, user_id, title, description, url, price, currency, is_purchased, created_at, updated_at
+				FROM {$this->items_table()}
+				WHERE wishlist_id = %d
+				ORDER BY created_at ASC",
+				absint( $wishlist_id )
+			),
+			ARRAY_A
+		);
+
+		return is_array( $results ) ? array_map( array( $this, 'map_item' ), $results ) : array();
+	}
+
+	/**
 	 * Create a wishlist.
 	 *
 	 * @param int $user_id User ID.

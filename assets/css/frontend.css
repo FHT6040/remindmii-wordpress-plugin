@@ -454,3 +454,54 @@
 .remindmii-button--danger:hover {
 	background: #fca5a5;
 }
+
+/* ==========================================================================
+   Public Wishlist View
+   ========================================================================== */
+
+.remindmii-public-wishlist { max-width: 720px; margin: 0 auto; }
+
+.remindmii-public-wishlist__title { margin-bottom: 0.25rem; }
+
+.remindmii-public-wishlist__desc {
+	color: #64748b;
+	margin-bottom: 1.25rem;
+}
+
+.remindmii-public-wishlist__items {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.remindmii-public-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	background: #f8faff;
+	border: 1px solid #dde3f0;
+	border-radius: 0.5rem;
+	padding: 0.875rem 1rem;
+}
+
+.remindmii-public-item--purchased { opacity: 0.55; }
+
+.remindmii-public-item--purchased .remindmii-public-item__title {
+	text-decoration: line-through;
+}
+
+.remindmii-public-item__title { font-weight: 600; font-size: 1rem; }
+
+.remindmii-public-item__price {
+	font-size: 0.875rem;
+	color: #475569;
+}
+
+.remindmii-public-item__desc {
+	font-size: 0.875rem;
+	color: #64748b;
+	margin: 0;
+}
