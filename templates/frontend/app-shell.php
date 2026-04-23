@@ -173,5 +173,105 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 		<ul class="remindmii-reminders" data-remindmii-list hidden></ul>
 			<ul class="remindmii-categories" data-remindmii-categories hidden></ul>
+
+		<!-- Wishlist panel -->
+		<div class="remindmii-wishlists-panel" data-remindmii-wishlists-panel hidden>
+			<div class="remindmii-wishlists-header">
+				<h3><?php echo esc_html__( 'Wishlists', 'remindmii' ); ?></h3>
+				<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-wishlist-new>
+					<?php echo esc_html__( 'New wishlist', 'remindmii' ); ?>
+				</button>
+			</div>
+
+			<form class="remindmii-wishlist-form" data-remindmii-wishlist-form hidden>
+				<input type="hidden" data-remindmii-wishlist-editing-id value="" />
+				<label class="remindmii-field">
+					<span><?php echo esc_html__( 'Wishlist title', 'remindmii' ); ?></span>
+					<input type="text" name="wishlist_title" maxlength="191" required />
+				</label>
+				<label class="remindmii-field">
+					<span><?php echo esc_html__( 'Description (optional)', 'remindmii' ); ?></span>
+					<textarea name="wishlist_description" rows="3"></textarea>
+				</label>
+				<label class="remindmii-checkbox">
+					<input type="checkbox" name="wishlist_is_public" value="1" />
+					<span><?php echo esc_html__( 'Make public (share link)', 'remindmii' ); ?></span>
+				</label>
+				<div class="remindmii-form__actions">
+					<button type="submit" class="remindmii-button" data-remindmii-wishlist-submit>
+						<?php echo esc_html__( 'Create wishlist', 'remindmii' ); ?>
+					</button>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-wishlist-form-cancel>
+						<?php echo esc_html__( 'Cancel', 'remindmii' ); ?>
+					</button>
+				</div>
+			</form>
+
+			<p class="remindmii-app-shell__status" data-remindmii-wishlists-status hidden></p>
+			<ul class="remindmii-wishlists-list" data-remindmii-wishlists-list></ul>
+
+			<!-- Detail view -->
+			<div class="remindmii-wishlist-detail" data-remindmii-wishlist-detail hidden>
+				<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-wishlist-back>
+					<?php echo esc_html__( '&#8592; Back', 'remindmii' ); ?>
+				</button>
+				<h4 data-remindmii-wishlist-detail-title></h4>
+				<p class="remindmii-wishlist-detail-desc" data-remindmii-wishlist-detail-desc></p>
+				<p class="remindmii-wishlist-share" data-remindmii-wishlist-share hidden>
+					<a href="#" target="_blank" rel="noopener" data-remindmii-wishlist-share-link></a>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-wishlist-copy-link>
+						<?php echo esc_html__( 'Copy link', 'remindmii' ); ?>
+					</button>
+				</p>
+
+				<div class="remindmii-wishlists-items-header">
+					<h4><?php echo esc_html__( 'Items', 'remindmii' ); ?></h4>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-item-new>
+						<?php echo esc_html__( 'Add item', 'remindmii' ); ?>
+					</button>
+				</div>
+
+				<form class="remindmii-item-form" data-remindmii-item-form hidden>
+					<input type="hidden" data-remindmii-item-editing-id value="" />
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Item title', 'remindmii' ); ?></span>
+						<input type="text" name="item_title" maxlength="191" required />
+					</label>
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Description (optional)', 'remindmii' ); ?></span>
+						<textarea name="item_description" rows="2"></textarea>
+					</label>
+					<div class="remindmii-field-group">
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'URL (optional)', 'remindmii' ); ?></span>
+							<input type="url" name="item_url" maxlength="2083" />
+						</label>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Price (optional)', 'remindmii' ); ?></span>
+							<input type="number" name="item_price" min="0" step="0.01" />
+						</label>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Currency', 'remindmii' ); ?></span>
+							<input type="text" name="item_currency" maxlength="10" value="DKK" />
+						</label>
+					</div>
+					<label class="remindmii-checkbox">
+						<input type="checkbox" name="item_is_purchased" value="1" />
+						<span><?php echo esc_html__( 'Purchased', 'remindmii' ); ?></span>
+					</label>
+					<div class="remindmii-form__actions">
+						<button type="submit" class="remindmii-button" data-remindmii-item-submit>
+							<?php echo esc_html__( 'Save item', 'remindmii' ); ?>
+						</button>
+						<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-item-form-cancel>
+							<?php echo esc_html__( 'Cancel', 'remindmii' ); ?>
+						</button>
+					</div>
+				</form>
+
+				<p class="remindmii-app-shell__status" data-remindmii-items-status hidden></p>
+				<ul class="remindmii-items-list" data-remindmii-items-list></ul>
+			</div>
+		</div>
 	</div>
 </div>

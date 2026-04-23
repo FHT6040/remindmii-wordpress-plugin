@@ -21,6 +21,8 @@ class Remindmii_DB_Schema {
 		$user_profiles_table    = $wpdb->prefix . 'remindmii_user_profiles';
 		$user_preferences_table = $wpdb->prefix . 'remindmii_user_preferences';
 		$notifications_log      = $wpdb->prefix . 'remindmii_notifications_log';
+		$wishlists_table        = $wpdb->prefix . 'remindmii_wishlists';
+		$wishlist_items_table   = $wpdb->prefix . 'remindmii_wishlist_items';
 
 		$categories_sql = "CREATE TABLE {$categories_table} (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -103,10 +105,46 @@ class Remindmii_DB_Schema {
 			KEY status (status)
 		) {$charset_collate};";
 
+		$wishlists_table       = $wpdb->prefix . 'remindmii_wishlists';
+		$wishlist_items_table  = $wpdb->prefix . 'remindmii_wishlist_items';
+
+		$wishlists_sql = "CREATE TABLE {$wishlists_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			title varchar(191) NOT NULL,
+			description longtext NULL,
+			is_public tinyint(1) NOT NULL DEFAULT 0,
+			public_token varchar(64) DEFAULT NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY user_id (user_id),
+			UNIQUE KEY public_token (public_token)
+		) {$charset_collate};";
+
+		$wishlist_items_sql = "CREATE TABLE {$wishlist_items_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			wishlist_id bigint(20) unsigned NOT NULL,
+			user_id bigint(20) unsigned NOT NULL,
+			title varchar(191) NOT NULL,
+			description longtext NULL,
+			url varchar(2083) DEFAULT NULL,
+			price decimal(10,2) DEFAULT NULL,
+			currency varchar(10) NOT NULL DEFAULT 'DKK',
+			is_purchased tinyint(1) NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY wishlist_id (wishlist_id),
+			KEY user_id (user_id)
+		) {$charset_collate};";
+
 		dbDelta( $categories_sql );
 		dbDelta( $reminders_sql );
 		dbDelta( $user_profiles_sql );
 		dbDelta( $user_preferences_sql );
 		dbDelta( $notifications_log_sql );
+		dbDelta( $wishlists_sql );
+		dbDelta( $wishlist_items_sql );
 	}
 }

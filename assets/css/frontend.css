@@ -343,3 +343,114 @@
 		align-items: stretch;
 	}
 }
+
+/* ==========================================================================
+   Wishlists
+   ========================================================================== */
+
+.remindmii-wishlists-panel { margin-top: 1.5rem; }
+
+.remindmii-wishlists-header,
+.remindmii-wishlists-items-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin-bottom: 0.75rem;
+}
+
+.remindmii-wishlists-header h3,
+.remindmii-wishlists-items-header h4 { margin: 0; }
+
+.remindmii-wishlists-list,
+.remindmii-items-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.remindmii-wishlist-row,
+.remindmii-item-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	background: #f8faff;
+	border: 1px solid #dde3f0;
+	border-radius: 0.5rem;
+	padding: 0.6rem 0.875rem;
+	flex-wrap: wrap;
+}
+
+.remindmii-wishlist-row__title.remindmii-link {
+	background: none;
+	border: none;
+	padding: 0;
+	font-weight: 600;
+	color: #2563eb;
+	cursor: pointer;
+	text-decoration: underline;
+	flex: 1 1 0;
+}
+
+.remindmii-wishlist-row__title.remindmii-link:hover { color: #1d4ed8; }
+
+.remindmii-wishlist-row__actions,
+.remindmii-item-row__actions {
+	display: flex;
+	gap: 0.35rem;
+	margin-left: auto;
+}
+
+.remindmii-item-row--purchased .remindmii-item-row__title {
+	text-decoration: line-through;
+	opacity: 0.55;
+}
+
+.remindmii-item-row__title { flex: 1 1 0; word-break: break-word; }
+
+.remindmii-badge {
+	font-size: 0.7rem;
+	font-weight: 600;
+	padding: 0.15em 0.5em;
+	border-radius: 0.25rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.remindmii-badge--public  { background: #dcfce7; color: #166534; }
+.remindmii-badge--private { background: #f1f5f9; color: #64748b; }
+
+.remindmii-wishlist-detail { margin-top: 0.75rem; }
+
+.remindmii-wishlist-detail-desc {
+	color: #64748b;
+	font-size: 0.9rem;
+	margin: 0.25rem 0 0.75rem;
+}
+
+.remindmii-wishlist-share {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	flex-wrap: wrap;
+	margin-bottom: 0.75rem;
+}
+
+.remindmii-wishlist-share a {
+	word-break: break-all;
+	color: #2563eb;
+}
+
+.remindmii-button--danger {
+	background: #fee2e2;
+	color: #991b1b;
+	border-color: #fca5a5;
+}
+
+.remindmii-button--danger:hover {
+	background: #fca5a5;
+}

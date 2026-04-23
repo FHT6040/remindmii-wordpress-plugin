@@ -873,6 +873,419 @@ document.addEventListener('DOMContentLoaded', function () {
 		return match && match.name ? match.name : config.i18n.noCategory;
 	}
 
+	// =========================================================================
+	// Wishlists
+	// =========================================================================
+
+	var wishlistsPanel     = root.querySelector('[data-remindmii-wishlists-panel]');
+	var wishlistsListEl    = root.querySelector('[data-remindmii-wishlists-list]');
+	var wishlistForm       = root.querySelector('[data-remindmii-wishlist-form]');
+	var wishlistSubmitBtn  = root.querySelector('[data-remindmii-wishlist-submit]');
+	var wishlistNewBtn     = root.querySelector('[data-remindmii-wishlist-new]');
+	var wishlistCancelBtn  = root.querySelector('[data-remindmii-wishlist-form-cancel]');
+	var wishlistEditingId  = root.querySelector('[data-remindmii-wishlist-editing-id]');
+	var wishlistsStatus    = root.querySelector('[data-remindmii-wishlists-status]');
+
+	var wishlistDetailEl     = root.querySelector('[data-remindmii-wishlist-detail]');
+	var wishlistDetailTitle  = root.querySelector('[data-remindmii-wishlist-detail-title]');
+	var wishlistDetailDesc   = root.querySelector('[data-remindmii-wishlist-detail-desc]');
+	var wishlistShareEl      = root.querySelector('[data-remindmii-wishlist-share]');
+	var wishlistShareLink    = root.querySelector('[data-remindmii-wishlist-share-link]');
+	var wishlistCopyLinkBtn  = root.querySelector('[data-remindmii-wishlist-copy-link]');
+	var wishlistBackBtn      = root.querySelector('[data-remindmii-wishlist-back]');
+
+	var itemsListEl     = root.querySelector('[data-remindmii-items-list]');
+	var itemForm        = root.querySelector('[data-remindmii-item-form]');
+	var itemSubmitBtn   = root.querySelector('[data-remindmii-item-submit]');
+	var itemNewBtn      = root.querySelector('[data-remindmii-item-new]');
+	var itemCancelBtn   = root.querySelector('[data-remindmii-item-form-cancel]');
+	var itemEditingId   = root.querySelector('[data-remindmii-item-editing-id]');
+	var itemsStatus     = root.querySelector('[data-remindmii-items-status]');
+
+	var wishlists         = [];
+	var activeWishlistId  = null;
+	var wishlistItems     = [];
+
+	function setWishlistStatus(msg, show) {
+		if (!wishlistsStatus) { return; }
+		wishlistsStatus.textContent = msg;
+		wishlistsStatus.hidden = !show;
+	}
+
+	function setItemsStatus(msg, show) {
+		if (!itemsStatus) { return; }
+		itemsStatus.textContent = msg;
+		itemsStatus.hidden = !show;
+	}
+
+	function loadWishlists() {
+		if (!config.wishlistsUrl) { return; }
+		setWishlistStatus(config.i18n.loadingWishlists || 'Loading...', true);
+
+		fetch(config.wishlistsUrl, {
+			headers: { 'X-WP-Nonce': config.restNonce }
+		})
+		.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+		.then(function (data) {
+			wishlists = data.wishlists || [];
+			renderWishlists(wishlists);
+			setWishlistStatus('', false);
+		})
+		.catch(function () {
+			setWishlistStatus(config.i18n.genericError || 'Error', true);
+		});
+	}
+
+	function renderWishlists(list) {
+		if (!wishlistsListEl) { return; }
+		wishlistsListEl.innerHTML = '';
+
+		if (!list.length) {
+			wishlistsListEl.innerHTML = '<li class="remindmii-empty">' + escapeHtml(config.i18n.noWishlists || 'No wishlists yet.') + '</li>';
+			return;
+		}
+
+		list.forEach(function (wl) {
+			var li = document.createElement('li');
+			li.className = 'remindmii-wishlist-row';
+			var badge = wl.is_public
+				? '<span class="remindmii-badge remindmii-badge--public">' + escapeHtml(config.i18n.publicBadge || 'Public') + '</span>'
+				: '<span class="remindmii-badge remindmii-badge--private">' + escapeHtml(config.i18n.privateBadge || 'Private') + '</span>';
+
+			li.innerHTML =
+				'<button type="button" class="remindmii-wishlist-row__title remindmii-link" data-action="open-wishlist">' + escapeHtml(wl.title) + '</button>' +
+				badge +
+				'<div class="remindmii-wishlist-row__actions">' +
+				'<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-action="edit-wishlist">' + escapeHtml(config.i18n.edit || 'Edit') + '</button>' +
+				'<button type="button" class="remindmii-button remindmii-button--danger remindmii-button--small" data-action="delete-wishlist">' + escapeHtml(config.i18n.delete || 'Delete') + '</button>' +
+				'</div>';
+
+			li.querySelector('[data-action="open-wishlist"]').addEventListener('click', function () {
+				openWishlist(wl);
+			});
+			li.querySelector('[data-action="edit-wishlist"]').addEventListener('click', function () {
+				startEditWishlist(wl);
+			});
+			li.querySelector('[data-action="delete-wishlist"]').addEventListener('click', function () {
+				handleDeleteWishlist(wl.id);
+			});
+
+			wishlistsListEl.appendChild(li);
+		});
+	}
+
+	function startEditWishlist(wl) {
+		if (!wishlistForm) { return; }
+		wishlistEditingId.value = wl.id;
+		wishlistForm.querySelector('[name="wishlist_title"]').value = wl.title || '';
+		wishlistForm.querySelector('[name="wishlist_description"]').value = wl.description || '';
+		wishlistForm.querySelector('[name="wishlist_is_public"]').checked = !!wl.is_public;
+		if (wishlistSubmitBtn) {
+			wishlistSubmitBtn.textContent = config.i18n.updateWishlist || 'Save wishlist';
+		}
+		wishlistForm.hidden = false;
+	}
+
+	function handleDeleteWishlist(wlId) {
+		if (!window.confirm(config.i18n.confirmDeleteWishlist || 'Delete this wishlist?')) { return; }
+		fetch(config.wishlistsUrl + '/' + wlId, {
+			method: 'DELETE',
+			headers: { 'X-WP-Nonce': config.restNonce }
+		})
+		.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+		.then(function () {
+			loadWishlists();
+		})
+		.catch(function () {
+			setWishlistStatus(config.i18n.genericError || 'Error', true);
+		});
+	}
+
+	function openWishlist(wl) {
+		activeWishlistId = wl.id;
+		if (wishlistDetailTitle) { wishlistDetailTitle.textContent = wl.title; }
+		if (wishlistDetailDesc) { wishlistDetailDesc.textContent = wl.description || ''; }
+
+		if (wishlistShareEl) {
+			if (wl.is_public && wl.public_token) {
+				var shareUrl = window.location.origin + '/?remindmii_wishlist=' + wl.public_token;
+				wishlistShareEl.hidden = false;
+				if (wishlistShareLink) {
+					wishlistShareLink.href = shareUrl;
+					wishlistShareLink.textContent = shareUrl;
+				}
+			} else {
+				wishlistShareEl.hidden = true;
+			}
+		}
+
+		if (wishlistsListEl) { wishlistsListEl.hidden = true; }
+		if (wishlistForm) { wishlistForm.hidden = true; }
+		if (wishlistDetailEl) { wishlistDetailEl.hidden = false; }
+
+		loadWishlistItems(wl.id);
+	}
+
+	function loadWishlistItems(wlId) {
+		if (!config.wishlistsUrl) { return; }
+		setItemsStatus(config.i18n.loadingItems || 'Loading items...', true);
+
+		fetch(config.wishlistsUrl + '/' + wlId + '/items', {
+			headers: { 'X-WP-Nonce': config.restNonce }
+		})
+		.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+		.then(function (data) {
+			wishlistItems = data.items || [];
+			renderWishlistItems(wishlistItems);
+			setItemsStatus('', false);
+		})
+		.catch(function () {
+			setItemsStatus(config.i18n.genericError || 'Error', true);
+		});
+	}
+
+	function renderWishlistItems(items) {
+		if (!itemsListEl) { return; }
+		itemsListEl.innerHTML = '';
+
+		if (!items.length) {
+			itemsListEl.innerHTML = '<li class="remindmii-empty">' + escapeHtml(config.i18n.noItems || 'No items yet.') + '</li>';
+			return;
+		}
+
+		items.forEach(function (item) {
+			var li = document.createElement('li');
+			li.className = 'remindmii-item-row' + (item.is_purchased ? ' remindmii-item-row--purchased' : '');
+			var priceStr = item.price !== null ? ' – ' + item.price + ' ' + escapeHtml(item.currency) : '';
+			var urlStr = item.url ? ' <a href="' + escapeHtml(item.url) + '" target="_blank" rel="noopener">' + escapeHtml(item.url) + '</a>' : '';
+
+			li.innerHTML =
+				'<span class="remindmii-item-row__title">' + escapeHtml(item.title) + priceStr + '</span>' +
+				urlStr +
+				'<div class="remindmii-item-row__actions">' +
+				'<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-action="toggle-item" title="' + escapeHtml(config.i18n.togglePurchased || 'Toggle purchased') + '">' + (item.is_purchased ? '✓' : '○') + '</button>' +
+				'<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-action="edit-item">' + escapeHtml(config.i18n.edit || 'Edit') + '</button>' +
+				'<button type="button" class="remindmii-button remindmii-button--danger remindmii-button--small" data-action="delete-item">' + escapeHtml(config.i18n.delete || 'Delete') + '</button>' +
+				'</div>';
+
+			li.querySelector('[data-action="toggle-item"]').addEventListener('click', function () {
+				handleToggleItem(item.id);
+			});
+			li.querySelector('[data-action="edit-item"]').addEventListener('click', function () {
+				startEditItem(item);
+			});
+			li.querySelector('[data-action="delete-item"]').addEventListener('click', function () {
+				handleDeleteItem(item.id);
+			});
+
+			itemsListEl.appendChild(li);
+		});
+	}
+
+	function startEditItem(item) {
+		if (!itemForm) { return; }
+		itemEditingId.value = item.id;
+		itemForm.querySelector('[name="item_title"]').value = item.title || '';
+		itemForm.querySelector('[name="item_description"]').value = item.description || '';
+		itemForm.querySelector('[name="item_url"]').value = item.url || '';
+		itemForm.querySelector('[name="item_price"]').value = item.price !== null ? item.price : '';
+		itemForm.querySelector('[name="item_currency"]').value = item.currency || 'DKK';
+		itemForm.querySelector('[name="item_is_purchased"]').checked = !!item.is_purchased;
+		if (itemSubmitBtn) { itemSubmitBtn.textContent = config.i18n.saveItem || 'Save item'; }
+		itemForm.hidden = false;
+	}
+
+	function handleToggleItem(itemId) {
+		fetch(config.wishlistsUrl + '/' + activeWishlistId + '/items/' + itemId + '/toggle', {
+			method: 'PUT',
+			headers: { 'X-WP-Nonce': config.restNonce }
+		})
+		.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+		.then(function () {
+			loadWishlistItems(activeWishlistId);
+		})
+		.catch(function () {
+			setItemsStatus(config.i18n.genericError || 'Error', true);
+		});
+	}
+
+	function handleDeleteItem(itemId) {
+		if (!window.confirm(config.i18n.confirmDeleteItem || 'Delete this item?')) { return; }
+		fetch(config.wishlistsUrl + '/' + activeWishlistId + '/items/' + itemId, {
+			method: 'DELETE',
+			headers: { 'X-WP-Nonce': config.restNonce }
+		})
+		.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+		.then(function () {
+			loadWishlistItems(activeWishlistId);
+		})
+		.catch(function () {
+			setItemsStatus(config.i18n.genericError || 'Error', true);
+		});
+	}
+
+	// --- Wishlist form handlers ---
+
+	if (wishlistNewBtn) {
+		wishlistNewBtn.addEventListener('click', function () {
+			if (!wishlistForm) { return; }
+			wishlistEditingId.value = '';
+			wishlistForm.reset();
+			if (wishlistSubmitBtn) { wishlistSubmitBtn.textContent = config.i18n.createWishlist || 'Create wishlist'; }
+			wishlistForm.hidden = !wishlistForm.hidden;
+		});
+	}
+
+	if (wishlistCancelBtn) {
+		wishlistCancelBtn.addEventListener('click', function () {
+			if (wishlistForm) { wishlistForm.hidden = true; }
+		});
+	}
+
+	if (wishlistForm) {
+		wishlistForm.addEventListener('submit', function (e) {
+			e.preventDefault();
+			var editId = wishlistEditingId ? wishlistEditingId.value : '';
+			var titleField = wishlistForm.querySelector('[name="wishlist_title"]');
+			var titleVal = titleField ? titleField.value.trim() : '';
+
+			if (!titleVal) {
+				setWishlistStatus(config.i18n.titleRequired || 'Title is required.', true);
+				return;
+			}
+
+			var payload = {
+				title: titleVal,
+				description: (wishlistForm.querySelector('[name="wishlist_description"]') || {}).value || '',
+				is_public: !!(wishlistForm.querySelector('[name="wishlist_is_public"]') || {}).checked
+			};
+
+			var method = editId ? 'PUT' : 'POST';
+			var url = editId ? config.wishlistsUrl + '/' + editId : config.wishlistsUrl;
+			if (wishlistSubmitBtn) { wishlistSubmitBtn.textContent = config.i18n.creatingWishlist || 'Creating...'; }
+
+			fetch(url, {
+				method: method,
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': config.restNonce
+				},
+				body: JSON.stringify(payload)
+			})
+			.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+			.then(function () {
+				wishlistForm.hidden = true;
+				wishlistForm.reset();
+				wishlistEditingId.value = '';
+				loadWishlists();
+			})
+			.catch(function () {
+				setWishlistStatus(config.i18n.genericError || 'Error', true);
+				if (wishlistSubmitBtn) { wishlistSubmitBtn.textContent = config.i18n.createWishlist || 'Create wishlist'; }
+			});
+		});
+	}
+
+	// --- Item form handlers ---
+
+	if (itemNewBtn) {
+		itemNewBtn.addEventListener('click', function () {
+			if (!itemForm) { return; }
+			itemEditingId.value = '';
+			itemForm.reset();
+			itemForm.querySelector('[name="item_currency"]').value = 'DKK';
+			if (itemSubmitBtn) { itemSubmitBtn.textContent = config.i18n.saveItem || 'Save item'; }
+			itemForm.hidden = !itemForm.hidden;
+		});
+	}
+
+	if (itemCancelBtn) {
+		itemCancelBtn.addEventListener('click', function () {
+			if (itemForm) { itemForm.hidden = true; }
+		});
+	}
+
+	if (wishlistBackBtn) {
+		wishlistBackBtn.addEventListener('click', function () {
+			activeWishlistId = null;
+			if (wishlistDetailEl) { wishlistDetailEl.hidden = true; }
+			if (wishlistsListEl) { wishlistsListEl.hidden = false; }
+		});
+	}
+
+	if (wishlistCopyLinkBtn) {
+		wishlistCopyLinkBtn.addEventListener('click', function () {
+			var link = wishlistShareLink ? wishlistShareLink.href : '';
+			if (!link) { return; }
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(link).then(function () {
+					wishlistCopyLinkBtn.textContent = config.i18n.linkCopied || 'Link copied!';
+					setTimeout(function () {
+						wishlistCopyLinkBtn.textContent = config.i18n.copyLink || 'Copy link';
+					}, 2000);
+				});
+			}
+		});
+	}
+
+	if (itemForm) {
+		itemForm.addEventListener('submit', function (e) {
+			e.preventDefault();
+			if (!activeWishlistId) { return; }
+			var editId = itemEditingId ? itemEditingId.value : '';
+			var titleField = itemForm.querySelector('[name="item_title"]');
+			var titleVal = titleField ? titleField.value.trim() : '';
+
+			if (!titleVal) {
+				setItemsStatus(config.i18n.titleRequired || 'Title is required.', true);
+				return;
+			}
+
+			var priceField = itemForm.querySelector('[name="item_price"]');
+			var priceVal = priceField && priceField.value !== '' ? parseFloat(priceField.value) : null;
+
+			var payload = {
+				title: titleVal,
+				description: (itemForm.querySelector('[name="item_description"]') || {}).value || '',
+				url: (itemForm.querySelector('[name="item_url"]') || {}).value || '',
+				price: priceVal,
+				currency: (itemForm.querySelector('[name="item_currency"]') || {}).value || 'DKK',
+				is_purchased: !!(itemForm.querySelector('[name="item_is_purchased"]') || {}).checked
+			};
+
+			var method = editId ? 'PUT' : 'POST';
+			var url = editId
+				? config.wishlistsUrl + '/' + activeWishlistId + '/items/' + editId
+				: config.wishlistsUrl + '/' + activeWishlistId + '/items';
+
+			if (itemSubmitBtn) { itemSubmitBtn.textContent = config.i18n.savingItem || 'Saving...'; }
+
+			fetch(url, {
+				method: method,
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': config.restNonce
+				},
+				body: JSON.stringify(payload)
+			})
+			.then(function (r) { return r.ok ? r.json() : Promise.reject(r); })
+			.then(function () {
+				itemForm.hidden = true;
+				itemForm.reset();
+				itemForm.querySelector('[name="item_currency"]').value = 'DKK';
+				itemEditingId.value = '';
+				loadWishlistItems(activeWishlistId);
+			})
+			.catch(function () {
+				setItemsStatus(config.i18n.genericError || 'Error', true);
+				if (itemSubmitBtn) { itemSubmitBtn.textContent = config.i18n.saveItem || 'Save item'; }
+			});
+		});
+	}
+
+	// Expose wishlists panel initialisation for nav (mirrors existing patterns).
+	// loadWishlists() is called when the user navigates to the wishlists view.
+
 	function escapeHtml(value) {
 		return String(value)
 			.replace(/&/g, '&amp;')

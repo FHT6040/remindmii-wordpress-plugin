@@ -34,6 +34,13 @@ class Remindmii_REST {
 	private $reminders_controller;
 
 	/**
+	 * Wishlists controller instance.
+	 *
+	 * @var Remindmii_REST_Wishlists_Controller
+	 */
+	private $wishlists_controller;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -46,6 +53,7 @@ class Remindmii_REST {
 			new Remindmii_Reminders_Repository(),
 			$categories_repository
 		);
+		$this->wishlists_controller = new Remindmii_REST_Wishlists_Controller( new Remindmii_Wishlists_Repository() );
 	}
 
 	/**
@@ -67,6 +75,7 @@ class Remindmii_REST {
 		$this->profile_controller->register_routes();
 		$this->categories_controller->register_routes();
 		$this->reminders_controller->register_routes();
+		$this->wishlists_controller->register_routes();
 
 		register_rest_route(
 			'remindmii/v1',
