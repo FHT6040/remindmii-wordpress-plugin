@@ -187,6 +187,10 @@ class Remindmii_Shortcodes {
 					'points'                    => __( 'Points', 'remindmii' ),
 					'dayStreak'                 => __( 'Day streak', 'remindmii' ),
 					'loadingGamification'       => __( 'Loading...', 'remindmii' ),
+					// Location reminders.
+					'nearLocation'              => __( 'You are near', 'remindmii' ),
+					'geolocationUnsupported'    => __( 'Geolocation is not supported by this browser.', 'remindmii' ),
+					'geolocationError'          => __( 'Could not determine your location.', 'remindmii' ),
 				),
 			)
 		);

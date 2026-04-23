@@ -837,3 +837,24 @@
 .remindmii-badge-earned-tag { font-size: 0.7rem; color: #d97706; font-weight: 600; }
 
 .remindmii-badge-locked-tag { font-size: 0.7rem; color: #94a3b8; }
+
+/* ==========================================================================
+   Location reminder fields
+   ========================================================================== */
+
+.remindmii-location-details {
+	margin-bottom: 1rem;
+	border: 1px solid #e2e8f0;
+	border-radius: 0.375rem;
+	padding: 0.5rem 0.75rem;
+}
+
+.remindmii-location-details > summary {
+	cursor: pointer;
+	font-weight: 600;
+	color: #475569;
+	user-select: none;
+	padding: 0.25rem 0;
+}
+
+.remindmii-location-fields { margin-top: 0.75rem; }

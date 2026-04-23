@@ -247,6 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			var responseData = await response.json();
 
 			reminders = Array.isArray(responseData) ? responseData : [];
+			window.__remindmiiReminders = reminders;
 			renderReminders(reminders);
 			setStatus('', false);
 		} catch (error) {
@@ -279,6 +280,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		var isRecurring = formData.get('is_recurring') === '1';
 		var editingId = getEditingReminderId();
+		var locLat    = formData.get('location_lat')    ? parseFloat( formData.get('location_lat') )    : null;
+		var locLng    = formData.get('location_lng')    ? parseFloat( formData.get('location_lng') )    : null;
+		var locRadius = formData.get('location_radius') ? parseInt( formData.get('location_radius'), 10 ) : 200;
+		var locName   = String( formData.get('location_name') || '' ).trim() || null;
 		var payload = {
 			category_id: String(formData.get('category_id') || '').trim(),
 			title: title,
@@ -286,7 +291,11 @@ document.addEventListener('DOMContentLoaded', function () {
 			reminder_date: reminderDate.toISOString(),
 			is_recurring: isRecurring,
 			recurrence_interval: isRecurring ? String(formData.get('recurrence_interval') || '') : '',
-			is_completed: editingId ? getEditingReminderCompletedState(editingId) : false
+			is_completed: editingId ? getEditingReminderCompletedState(editingId) : false,
+			location_name:   locName,
+			location_lat:    locLat,
+			location_lng:    locLng,
+			location_radius: locRadius,
 		};
 
 		submitButton.disabled = true;
@@ -487,6 +496,13 @@ document.addEventListener('DOMContentLoaded', function () {
 		form.elements.is_recurring.checked = Boolean(reminder.is_recurring);
 		form.elements.recurrence_interval.value = reminder.recurrence_interval || '';
 		form.elements.reminder_date.value = toDatetimeLocalValue(reminder.reminder_date);
+
+		// Location fields (optional — only if the form has them).
+		if ( form.elements.location_name )   { form.elements.location_name.value   = reminder.location_name   || ''; }
+		if ( form.elements.location_lat )    { form.elements.location_lat.value    = reminder.location_lat    != null ? reminder.location_lat    : ''; }
+		if ( form.elements.location_lng )    { form.elements.location_lng.value    = reminder.location_lng    != null ? reminder.location_lng    : ''; }
+		if ( form.elements.location_radius ) { form.elements.location_radius.value = reminder.location_radius != null ? reminder.location_radius : 200; }
+
 		submitButton.textContent = config.i18n.update;
 
 		if (cancelEditButton) {
@@ -1670,6 +1686,91 @@ document.addEventListener('DOMContentLoaded', function () {
 			}
 		} )
 		.catch( function () {} );
+	}
+
+	// =========================================================================
+	// Location reminders
+	// =========================================================================
+
+	var detectLocationBtn = root.querySelector('[data-remindmii-detect-location]');
+	var locationLatInput  = root.querySelector('[data-remindmii-location-lat]');
+	var locationLngInput  = root.querySelector('[data-remindmii-location-lng]');
+
+	if ( detectLocationBtn ) {
+		detectLocationBtn.addEventListener('click', function () {
+			if ( ! navigator.geolocation ) {
+				alert( config.i18n.geolocationUnsupported || 'Geolocation is not supported by this browser.' );
+				return;
+			}
+			detectLocationBtn.disabled = true;
+			navigator.geolocation.getCurrentPosition(
+				function (pos) {
+					if ( locationLatInput ) { locationLatInput.value = pos.coords.latitude.toFixed(7); }
+					if ( locationLngInput ) { locationLngInput.value = pos.coords.longitude.toFixed(7); }
+					detectLocationBtn.disabled = false;
+				},
+				function () {
+					alert( config.i18n.geolocationError || 'Could not determine your location.' );
+					detectLocationBtn.disabled = false;
+				}
+			);
+		} );
+	}
+
+	/**
+	 * Haversine distance in metres between two lat/lng points.
+	 *
+	 * @param {number} lat1
+	 * @param {number} lng1
+	 * @param {number} lat2
+	 * @param {number} lng2
+	 * @return {number} Distance in metres.
+	 */
+	function haversineDistance(lat1, lng1, lat2, lng2) {
+		var R  = 6371000; // Earth radius in metres.
+		var d1 = ( lat2 - lat1 ) * Math.PI / 180;
+		var d2 = ( lng2 - lng1 ) * Math.PI / 180;
+		var a  = Math.sin(d1 / 2) * Math.sin(d1 / 2) +
+		         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+		         Math.sin(d2 / 2) * Math.sin(d2 / 2);
+		return R * 2 * Math.atan2( Math.sqrt(a), Math.sqrt(1 - a) );
+	}
+
+	/**
+	 * Check loaded reminders for proximity and fire a Notification if within radius.
+	 * Called once after reminders are loaded and geolocation granted.
+	 *
+	 * @param {Array}  reminders  Array of reminder objects from API.
+	 * @param {number} userLat
+	 * @param {number} userLng
+	 */
+	function checkLocationReminders(reminders, userLat, userLng) {
+		if ( ! Array.isArray(reminders) ) { return; }
+		reminders.forEach( function (r) {
+			if ( ! r.location_lat || ! r.location_lng || r.is_completed ) { return; }
+			var dist   = haversineDistance( userLat, userLng, parseFloat(r.location_lat), parseFloat(r.location_lng) );
+			var radius = r.location_radius ? parseInt(r.location_radius, 10) : 200;
+			if ( dist <= radius && 'Notification' in window && Notification.permission === 'granted' ) {
+				new Notification( r.title, {
+					body: r.location_name ? ( config.i18n.nearLocation || 'You are near' ) + ' ' + r.location_name : '',
+					icon: '/wp-content/plugins/remindmii/assets/img/icon-192.png',
+				} );
+			}
+		} );
+	}
+
+	// Request notification permission and start proximity watch if enabled.
+	if ( navigator.geolocation && 'Notification' in window ) {
+		Notification.requestPermission().then( function (perm) {
+			if ( perm !== 'granted' ) { return; }
+			navigator.geolocation.watchPosition( function (pos) {
+				var remindersData = root.querySelectorAll('[data-reminder-id]');
+				// Collect reminder data from DOM data attributes if available, or re-fetch.
+				if ( window.__remindmiiReminders && window.__remindmiiReminders.length ) {
+					checkLocationReminders( window.__remindmiiReminders, pos.coords.latitude, pos.coords.longitude );
+				}
+			}, null, { enableHighAccuracy: false, maximumAge: 60000, timeout: 30000 } );
+		} );
 	}
 
 	function escapeHtml(value) {

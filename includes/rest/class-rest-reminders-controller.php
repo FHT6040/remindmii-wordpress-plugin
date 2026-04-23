@@ -228,6 +228,10 @@ class Remindmii_REST_Reminders_Controller {
 			'is_recurring'        => $is_recurring ? 1 : 0,
 			'recurrence_interval' => $recurrence_interval,
 			'is_completed'        => rest_sanitize_boolean( $request->get_param( 'is_completed' ) ) ? 1 : 0,
+			'location_name'       => sanitize_text_field( (string) $request->get_param( 'location_name' ) ) ?: null,
+			'location_lat'        => null !== $request->get_param( 'location_lat' ) ? (float) $request->get_param( 'location_lat' ) : null,
+			'location_lng'        => null !== $request->get_param( 'location_lng' ) ? (float) $request->get_param( 'location_lng' ) : null,
+			'location_radius'     => null !== $request->get_param( 'location_radius' ) ? absint( $request->get_param( 'location_radius' ) ) : 200,
 		);
 	}
 }

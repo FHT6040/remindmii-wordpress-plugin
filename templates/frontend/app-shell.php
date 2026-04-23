@@ -166,6 +166,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</select>
 			</label>
 
+			<details class="remindmii-location-details">
+				<summary><?php echo esc_html__( 'Location reminder (optional)', 'remindmii' ); ?></summary>
+				<div class="remindmii-location-fields">
+					<label class="remindmii-field">
+						<span><?php echo esc_html__( 'Location name', 'remindmii' ); ?></span>
+						<input type="text" name="location_name" maxlength="191" placeholder="<?php echo esc_attr__( 'e.g. Supermarket', 'remindmii' ); ?>" />
+					</label>
+					<div class="remindmii-field-group">
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Latitude', 'remindmii' ); ?></span>
+							<input type="number" name="location_lat" step="0.0000001" min="-90" max="90" data-remindmii-location-lat />
+						</label>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Longitude', 'remindmii' ); ?></span>
+							<input type="number" name="location_lng" step="0.0000001" min="-180" max="180" data-remindmii-location-lng />
+						</label>
+						<label class="remindmii-field">
+							<span><?php echo esc_html__( 'Radius (metres)', 'remindmii' ); ?></span>
+							<input type="number" name="location_radius" min="50" max="50000" value="200" />
+						</label>
+					</div>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-detect-location>
+						<?php echo esc_html__( '📍 Use my current location', 'remindmii' ); ?>
+					</button>
+				</div>
+			</details>
+
 			<div class="remindmii-form__actions">
 				<button type="submit" class="remindmii-button" data-remindmii-submit>
 					<?php echo esc_html__( 'Create reminder', 'remindmii' ); ?>
