@@ -31,6 +31,7 @@ class Remindmii_Shortcodes {
 				'notificationsExportUrl' => esc_url_raw( rest_url( 'remindmii/v1/notifications/export' ) ),
 				'profileUrl'   => esc_url_raw( rest_url( 'remindmii/v1/profile' ) ),
 				'wishlistsUrl' => esc_url_raw( rest_url( 'remindmii/v1/wishlists' ) ),
+				'templatesUrl' => esc_url_raw( rest_url( 'remindmii/v1/templates' ) ),
 				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
@@ -132,6 +133,22 @@ class Remindmii_Shortcodes {
 					'togglePurchased'        => __( 'Toggle purchased', 'remindmii' ),
 					'publicBadge'            => __( 'Public', 'remindmii' ),
 					'privateBadge'           => __( 'Private', 'remindmii' ),
+					// Templates.
+					'useTemplate'            => __( 'Use template', 'remindmii' ),
+					'templatesHeading'       => __( 'Choose a template', 'remindmii' ),
+					'templatesAll'           => __( 'All', 'remindmii' ),
+					'templateCategories'     => array(
+						'birthday'     => __( 'Birthdays', 'remindmii' ),
+						'anniversary'  => __( 'Anniversaries', 'remindmii' ),
+						'subscription' => __( 'Subscriptions', 'remindmii' ),
+						'gift_card'    => __( 'Gift cards', 'remindmii' ),
+						'voucher'      => __( 'Vouchers', 'remindmii' ),
+						'finance'      => __( 'Finance', 'remindmii' ),
+						'event'        => __( 'Events', 'remindmii' ),
+						'health'       => __( 'Health', 'remindmii' ),
+					),
+					'loadingTemplates'       => __( 'Loading templates...', 'remindmii' ),
+					'closeTemplates'         => __( 'Close', 'remindmii' ),
 				),
 			)
 		);

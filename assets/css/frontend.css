@@ -505,3 +505,105 @@
 	color: #64748b;
 	margin: 0;
 }
+
+/* ==========================================================================
+   Modal
+   ========================================================================== */
+
+.remindmii-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0,0,0,.45);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+}
+
+.remindmii-modal {
+	background: #fff;
+	border-radius: 0.75rem;
+	box-shadow: 0 8px 32px rgba(0,0,0,.18);
+	width: 100%;
+	max-width: 560px;
+	max-height: 85vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.remindmii-modal__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.25rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.remindmii-modal__header h3 { margin: 0; }
+
+.remindmii-modal__close {
+	background: none;
+	border: none;
+	font-size: 1.1rem;
+	cursor: pointer;
+	color: #64748b;
+	padding: 0.25rem 0.5rem;
+	border-radius: 0.25rem;
+}
+
+.remindmii-modal__close:hover { background: #f1f5f9; }
+
+/* ==========================================================================
+   Templates
+   ========================================================================== */
+
+.remindmii-form__template-bar {
+	margin-bottom: 0.75rem;
+}
+
+.remindmii-templates-filter {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	padding: 0.75rem 1.25rem;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.remindmii-template-cat-btn.is-active {
+	background: #2563eb;
+	color: #fff;
+	border-color: #2563eb;
+}
+
+.remindmii-templates-list {
+	list-style: none;
+	margin: 0;
+	padding: 0.5rem 0;
+	overflow-y: auto;
+	flex: 1;
+}
+
+.remindmii-template-row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.6rem 1.25rem;
+	cursor: pointer;
+	transition: background 0.1s;
+}
+
+.remindmii-template-row:hover { background: #f8faff; }
+
+.remindmii-template-row__icon { font-size: 1.5rem; flex-shrink: 0; }
+
+.remindmii-template-row__body { flex: 1; }
+
+.remindmii-template-row__body strong { display: block; margin-bottom: 0.1rem; }
+
+.remindmii-template-row__body p {
+	margin: 0;
+	font-size: 0.8rem;
+	color: #64748b;
+}

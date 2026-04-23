@@ -111,6 +111,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 
 		<form class="remindmii-form" data-remindmii-form hidden>
+			<div class="remindmii-form__template-bar">
+				<button type="button" class="remindmii-button remindmii-button--secondary remindmii-button--small" data-remindmii-templates-open>
+					<?php echo esc_html__( 'Use template', 'remindmii' ); ?>
+				</button>
+			</div>
 			<div class="remindmii-field-group">
 				<label class="remindmii-field">
 					<span><?php echo esc_html__( 'Title', 'remindmii' ); ?></span>
@@ -271,6 +276,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 				<p class="remindmii-app-shell__status" data-remindmii-items-status hidden></p>
 				<ul class="remindmii-items-list" data-remindmii-items-list></ul>
+			</div>
+		</div>
+		<!-- Template picker modal -->
+		<div class="remindmii-modal-overlay" data-remindmii-templates-modal hidden>
+			<div class="remindmii-modal">
+				<div class="remindmii-modal__header">
+					<h3><?php echo esc_html__( 'Choose a template', 'remindmii' ); ?></h3>
+					<button type="button" class="remindmii-modal__close" data-remindmii-templates-close>&#x2715;</button>
+				</div>
+				<div class="remindmii-templates-filter" data-remindmii-templates-filter></div>
+				<ul class="remindmii-templates-list" data-remindmii-templates-list></ul>
 			</div>
 		</div>
 	</div>

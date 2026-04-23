@@ -1286,6 +1286,125 @@ document.addEventListener('DOMContentLoaded', function () {
 	// Expose wishlists panel initialisation for nav (mirrors existing patterns).
 	// loadWishlists() is called when the user navigates to the wishlists view.
 
+	// =========================================================================
+	// Reminder Templates
+	// =========================================================================
+
+	var templatesModal      = root.querySelector('[data-remindmii-templates-modal]');
+	var templatesOpenBtn    = root.querySelector('[data-remindmii-templates-open]');
+	var templatesCloseBtn   = root.querySelector('[data-remindmii-templates-close]');
+	var templatesListEl     = root.querySelector('[data-remindmii-templates-list]');
+	var templatesFilterEl   = root.querySelector('[data-remindmii-templates-filter]');
+
+	var allTemplates          = [];
+	var activeTemplateCategory = 'all';
+
+	function loadTemplates() {
+		if ( ! config.templatesUrl || ! templatesListEl ) { return; }
+		if ( allTemplates.length ) {
+			renderTemplates();
+			return;
+		}
+		if ( templatesListEl ) {
+			templatesListEl.innerHTML = '<li class="remindmii-empty">' + escapeHtml( config.i18n.loadingTemplates || 'Loading...' ) + '</li>';
+		}
+		fetch( config.templatesUrl )
+			.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+			.then( function (data) {
+				allTemplates = data.templates || [];
+				buildTemplateCategoryFilter();
+				renderTemplates();
+			} )
+			.catch( function () {
+				if ( templatesListEl ) { templatesListEl.innerHTML = ''; }
+			} );
+	}
+
+	function buildTemplateCategoryFilter() {
+		if ( ! templatesFilterEl ) { return; }
+		var cats = ['all'];
+		allTemplates.forEach( function (t) {
+			if ( cats.indexOf(t.category) === -1 ) { cats.push(t.category); }
+		} );
+
+		templatesFilterEl.innerHTML = '';
+		cats.forEach( function (cat) {
+			var btn = document.createElement('button');
+			btn.type = 'button';
+			btn.className = 'remindmii-button remindmii-button--secondary remindmii-button--small remindmii-template-cat-btn' + (cat === activeTemplateCategory ? ' is-active' : '');
+			var catLabels = (config.i18n.templateCategories || {});
+			btn.textContent = cat === 'all' ? (config.i18n.templatesAll || 'All') : (catLabels[cat] || cat);
+			btn.addEventListener('click', function () {
+				activeTemplateCategory = cat;
+				templatesFilterEl.querySelectorAll('.remindmii-template-cat-btn').forEach( function (b) { b.classList.remove('is-active'); } );
+				btn.classList.add('is-active');
+				renderTemplates();
+			});
+			templatesFilterEl.appendChild(btn);
+		} );
+	}
+
+	function renderTemplates() {
+		if ( ! templatesListEl ) { return; }
+		templatesListEl.innerHTML = '';
+		var filtered = activeTemplateCategory === 'all'
+			? allTemplates
+			: allTemplates.filter( function (t) { return t.category === activeTemplateCategory; } );
+
+		filtered.forEach( function (tmpl) {
+			var li = document.createElement('li');
+			li.className = 'remindmii-template-row';
+			li.innerHTML =
+				'<span class="remindmii-template-row__icon">' + escapeHtml(tmpl.icon || '') + '</span>' +
+				'<div class="remindmii-template-row__body">' +
+				'<strong>' + escapeHtml(tmpl.name) + '</strong>' +
+				( tmpl.description ? '<p>' + escapeHtml(tmpl.description) + '</p>' : '' ) +
+				'</div>' +
+				'<button type="button" class="remindmii-button remindmii-button--small" data-action="apply-template">' + escapeHtml(config.i18n.useTemplate || 'Use') + '</button>';
+
+			li.querySelector('[data-action="apply-template"]').addEventListener('click', function () {
+				applyTemplate(tmpl);
+			});
+			templatesListEl.appendChild(li);
+		} );
+	}
+
+	function applyTemplate(tmpl) {
+		var df = tmpl.default_fields || {};
+		if ( form ) {
+			var titleInput = form.querySelector('[name="title"]');
+			var descInput  = form.querySelector('[name="description"]');
+			var recurCheck = form.querySelector('[name="is_recurring"]');
+			var recurSel   = form.querySelector('[name="recurrence_interval"]');
+
+			if ( titleInput && df.title ) { titleInput.value = df.title; }
+			if ( descInput  && df.description !== undefined ) { descInput.value = df.description; }
+			if ( recurCheck ) { recurCheck.checked = !!df.is_recurring; }
+			if ( recurSel   && df.recurrence_interval !== undefined ) { recurSel.value = df.recurrence_interval; }
+		}
+		if ( templatesModal ) { templatesModal.hidden = true; }
+	}
+
+	if ( templatesOpenBtn ) {
+		templatesOpenBtn.addEventListener('click', function () {
+			if ( ! templatesModal ) { return; }
+			templatesModal.hidden = false;
+			loadTemplates();
+		});
+	}
+
+	if ( templatesCloseBtn ) {
+		templatesCloseBtn.addEventListener('click', function () {
+			if ( templatesModal ) { templatesModal.hidden = true; }
+		});
+	}
+
+	if ( templatesModal ) {
+		templatesModal.addEventListener('click', function (e) {
+			if ( e.target === templatesModal ) { templatesModal.hidden = true; }
+		});
+	}
+
 	function escapeHtml(value) {
 		return String(value)
 			.replace(/&/g, '&amp;')
