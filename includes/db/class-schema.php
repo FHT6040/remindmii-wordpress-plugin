@@ -165,5 +165,35 @@ class Remindmii_DB_Schema {
 		) {$charset_collate};";
 
 		dbDelta( $wishlist_shares_sql );
+
+		$achievements_table = $wpdb->prefix . 'remindmii_user_achievements';
+		$achievements_sql   = "CREATE TABLE {$achievements_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			achievement_key varchar(64) NOT NULL,
+			points int(11) NOT NULL DEFAULT 0,
+			earned_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY user_achievement (user_id, achievement_key)
+		) {$charset_collate};";
+
+		$user_stats_table = $wpdb->prefix . 'remindmii_user_stats';
+		$user_stats_sql   = "CREATE TABLE {$user_stats_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			user_id bigint(20) unsigned NOT NULL,
+			total_reminders_created int(11) NOT NULL DEFAULT 0,
+			total_completed int(11) NOT NULL DEFAULT 0,
+			current_streak int(11) NOT NULL DEFAULT 0,
+			longest_streak int(11) NOT NULL DEFAULT 0,
+			total_points int(11) NOT NULL DEFAULT 0,
+			last_activity_date date NULL,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY user_id (user_id)
+		) {$charset_collate};";
+
+		dbDelta( $achievements_sql );
+		dbDelta( $user_stats_sql );
 	}
 }

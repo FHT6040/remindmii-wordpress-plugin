@@ -756,3 +756,84 @@
 .remindmii-button--danger:hover { background: #fca5a5; }
 
 .remindmii-button--sm { padding: 0.2rem 0.6rem; font-size: 0.8rem; }
+
+/* ==========================================================================
+   Gamification
+   ========================================================================== */
+
+.remindmii-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.75rem;
+	margin-bottom: 1.5rem;
+}
+
+@media (min-width: 480px) {
+	.remindmii-stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.remindmii-stat-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 1rem 0.5rem;
+	background: #f0f9ff;
+	border-radius: 0.5rem;
+	border: 1px solid #bae6fd;
+}
+
+.remindmii-stat-card__value {
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: #0369a1;
+	line-height: 1;
+}
+
+.remindmii-stat-card__label {
+	font-size: 0.75rem;
+	color: #64748b;
+	margin-top: 0.25rem;
+	text-align: center;
+}
+
+.remindmii-badges-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 0.75rem;
+	margin-top: 0.75rem;
+}
+
+@media (min-width: 480px) {
+	.remindmii-badges-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.remindmii-badge-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 1rem 0.5rem;
+	border-radius: 0.5rem;
+	border: 2px solid #e2e8f0;
+	text-align: center;
+}
+
+.remindmii-badge-card.is-earned {
+	border-color: #fbbf24;
+	background: #fffbeb;
+}
+
+.remindmii-badge-card.is-locked {
+	opacity: 0.55;
+	filter: grayscale(0.6);
+}
+
+.remindmii-badge-card__icon { font-size: 2rem; line-height: 1; }
+
+.remindmii-badge-card strong { font-size: 0.85rem; }
+
+.remindmii-badge-card small { font-size: 0.75rem; color: #64748b; }
+
+.remindmii-badge-earned-tag { font-size: 0.7rem; color: #d97706; font-weight: 600; }
+
+.remindmii-badge-locked-tag { font-size: 0.7rem; color: #94a3b8; }

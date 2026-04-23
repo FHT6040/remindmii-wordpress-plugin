@@ -133,6 +133,9 @@ class Remindmii_REST_Reminders_Controller {
 			return $created;
 		}
 
+		// Award gamification points for creating.
+		Remindmii_Gamification::on_reminder_created( get_current_user_id() );
+
 		$response = rest_ensure_response( $created );
 		$response->set_status( 201 );
 
@@ -153,6 +156,10 @@ class Remindmii_REST_Reminders_Controller {
 		}
 
 		$updated = $this->repository->update( absint( $request['id'] ), get_current_user_id(), $data );
+
+		if ( ! is_wp_error( $updated ) && isset( $data['is_completed'] ) && 1 === (int) $data['is_completed'] ) {
+			Remindmii_Gamification::on_reminder_completed( get_current_user_id() );
+		}
 
 		return is_wp_error( $updated ) ? $updated : rest_ensure_response( $updated );
 	}

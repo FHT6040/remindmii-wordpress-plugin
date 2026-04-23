@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	loadProfile();
 	loadPreferences();
 	loadSharedWithMe();
+	loadGamification();
 	loadNotificationHistory({ append: false });
 	loadCategories().then(loadReminders);
 
@@ -1628,6 +1629,47 @@ document.addEventListener('DOMContentLoaded', function () {
 				if ( submitBtn ) { submitBtn.disabled = false; }
 			} );
 		} );
+	}
+
+	// =========================================================================
+	// Gamification
+	// =========================================================================
+
+	var gamificationPanel  = root.querySelector('[data-remindmii-gamification-panel]');
+	var statPoints         = root.querySelector('[data-remindmii-stat-points]');
+	var statStreak         = root.querySelector('[data-remindmii-stat-streak]');
+	var statCompleted      = root.querySelector('[data-remindmii-stat-completed]');
+	var statCreated        = root.querySelector('[data-remindmii-stat-created]');
+	var badgesGrid         = root.querySelector('[data-remindmii-badges-grid]');
+
+	function loadGamification() {
+		if ( ! config.gamificationUrl ) { return; }
+		fetch( config.gamificationUrl, {
+			headers: { 'X-WP-Nonce': config.restNonce }
+		} )
+		.then( function (r) { return r.ok ? r.json() : Promise.reject(r); } )
+		.then( function (data) {
+			var s = data.stats || {};
+			if ( statPoints )    { statPoints.textContent    = s.total_points    || 0; }
+			if ( statStreak )    { statStreak.textContent    = s.current_streak  || 0; }
+			if ( statCompleted ) { statCompleted.textContent = s.total_completed || 0; }
+			if ( statCreated )   { statCreated.textContent   = s.total_reminders_created || 0; }
+
+			if ( badgesGrid ) {
+				var badges = data.all_badges || [];
+				var html   = '';
+				badges.forEach( function (b) {
+					html += '<div class="remindmii-badge-card' + ( b.earned ? ' is-earned' : ' is-locked' ) + '">' +
+						'<span class="remindmii-badge-card__icon">' + escapeHtml( b.icon || '🏅' ) + '</span>' +
+						'<strong>' + escapeHtml( b.name ) + '</strong>' +
+						'<small>' + escapeHtml( b.description ) + '</small>' +
+						( b.earned ? '<span class="remindmii-badge-earned-tag">✓ Earned</span>' : '<span class="remindmii-badge-locked-tag">🔒 Locked</span>' ) +
+						'</div>';
+				} );
+				badgesGrid.innerHTML = html;
+			}
+		} )
+		.catch( function () {} );
 	}
 
 	function escapeHtml(value) {

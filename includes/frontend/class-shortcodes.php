@@ -34,6 +34,7 @@ class Remindmii_Shortcodes {
 				'templatesUrl'    => esc_url_raw( rest_url( 'remindmii/v1/templates' ) ),
 				'preferencesUrl'  => esc_url_raw( rest_url( 'remindmii/v1/preferences' ) ),
 				'sharedWithMeUrl' => esc_url_raw( rest_url( 'remindmii/v1/shared-with-me' ) ),
+				'gamificationUrl' => esc_url_raw( rest_url( 'remindmii/v1/gamification' ) ),
 				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
@@ -181,6 +182,11 @@ class Remindmii_Shortcodes {
 					'revokeShare'               => __( 'Revoke', 'remindmii' ),
 					'noSharedLists'             => __( 'No lists shared with you yet.', 'remindmii' ),
 					'loadingSharedLists'        => __( 'Loading...', 'remindmii' ),
+					// Gamification.
+					'gamificationHeading'       => __( 'Your Progress', 'remindmii' ),
+					'points'                    => __( 'Points', 'remindmii' ),
+					'dayStreak'                 => __( 'Day streak', 'remindmii' ),
+					'loadingGamification'       => __( 'Loading...', 'remindmii' ),
 				),
 			)
 		);

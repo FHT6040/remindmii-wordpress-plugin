@@ -239,6 +239,33 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<p class="remindmii-pref-status" data-remindmii-preferences-status hidden></p>
 		</div>
 
+		<!-- Gamification panel -->
+		<div class="remindmii-gamification-panel" data-remindmii-gamification-panel hidden>
+			<h3><?php echo esc_html__( 'Your Progress', 'remindmii' ); ?></h3>
+
+			<div class="remindmii-stats-grid" data-remindmii-stats-grid>
+				<div class="remindmii-stat-card">
+					<span class="remindmii-stat-card__value" data-remindmii-stat-points>—</span>
+					<span class="remindmii-stat-card__label"><?php echo esc_html__( 'Points', 'remindmii' ); ?></span>
+				</div>
+				<div class="remindmii-stat-card">
+					<span class="remindmii-stat-card__value" data-remindmii-stat-streak>—</span>
+					<span class="remindmii-stat-card__label"><?php echo esc_html__( 'Day streak', 'remindmii' ); ?></span>
+				</div>
+				<div class="remindmii-stat-card">
+					<span class="remindmii-stat-card__value" data-remindmii-stat-completed>—</span>
+					<span class="remindmii-stat-card__label"><?php echo esc_html__( 'Completed', 'remindmii' ); ?></span>
+				</div>
+				<div class="remindmii-stat-card">
+					<span class="remindmii-stat-card__value" data-remindmii-stat-created>—</span>
+					<span class="remindmii-stat-card__label"><?php echo esc_html__( 'Created', 'remindmii' ); ?></span>
+				</div>
+			</div>
+
+			<h4><?php echo esc_html__( 'Badges', 'remindmii' ); ?></h4>
+			<div class="remindmii-badges-grid" data-remindmii-badges-grid></div>
+		</div>
+
 		<!-- Shared lists panel -->
 		<div class="remindmii-shared-panel" data-remindmii-shared-panel hidden>
 			<h3><?php echo esc_html__( 'Shared with me', 'remindmii' ); ?></h3>
