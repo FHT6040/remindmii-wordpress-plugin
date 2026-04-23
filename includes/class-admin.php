@@ -194,14 +194,21 @@ class Remindmii_Admin {
 		check_admin_referer( 'remindmii_run_notifications' );
 		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( (string) $_POST['mode'] ) ) : 'live';
 		$mode = in_array( $mode, array( 'live', 'dry-run' ), true ) ? $mode : 'live';
+		$cron = new Remindmii_Cron();
+		$summary = $cron->process_notifications( 'dry-run' === $mode );
 
-		do_action( 'remindmii_process_notifications', 'dry-run' === $mode );
+		$summary = is_array( $summary ) ? $summary : array();
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
 					'page'               => 'remindmii',
 					'remindmii_notice'   => 'dry-run' === $mode ? 'notifications_dry_run' : 'notifications_ran',
+					'remindmii_total'    => isset( $summary['total'] ) ? absint( $summary['total'] ) : 0,
+					'remindmii_previewed'=> isset( $summary['previewed'] ) ? absint( $summary['previewed'] ) : 0,
+					'remindmii_sent'     => isset( $summary['sent'] ) ? absint( $summary['sent'] ) : 0,
+					'remindmii_failed'   => isset( $summary['failed'] ) ? absint( $summary['failed'] ) : 0,
+					'remindmii_rescheduled' => isset( $summary['rescheduled'] ) ? absint( $summary['rescheduled'] ) : 0,
 				),
 				admin_url( 'admin.php' )
 			)
@@ -276,6 +283,11 @@ class Remindmii_Admin {
 		$notice  = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
 		$filters = $this->get_notification_log_filters();
 		$logs    = $this->get_notification_logs( 30, $filters );
+		$total   = isset( $_GET['remindmii_total'] ) ? absint( wp_unslash( (string) $_GET['remindmii_total'] ) ) : 0;
+		$previewed = isset( $_GET['remindmii_previewed'] ) ? absint( wp_unslash( (string) $_GET['remindmii_previewed'] ) ) : 0;
+		$sent    = isset( $_GET['remindmii_sent'] ) ? absint( wp_unslash( (string) $_GET['remindmii_sent'] ) ) : 0;
+		$failed  = isset( $_GET['remindmii_failed'] ) ? absint( wp_unslash( (string) $_GET['remindmii_failed'] ) ) : 0;
+		$rescheduled = isset( $_GET['remindmii_rescheduled'] ) ? absint( wp_unslash( (string) $_GET['remindmii_rescheduled'] ) ) : 0;
 
 		?>
 		<div class="wrap remindmii-admin-page">
@@ -284,13 +296,37 @@ class Remindmii_Admin {
 
 			<?php if ( 'notifications_ran' === $notice ) : ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php echo esc_html__( 'Notification processing was run successfully.', 'remindmii' ); ?></p>
+					<p>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: total reminders, 2: sent count, 3: failed count, 4: rescheduled count */
+								__( 'Notification processing completed. Evaluated %1$d reminder(s), sent %2$d, failed %3$d, rescheduled %4$d.', 'remindmii' ),
+								$total,
+								$sent,
+								$failed,
+								$rescheduled
+							)
+						);
+						?>
+					</p>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( 'notifications_dry_run' === $notice ) : ?>
 				<div class="notice notice-info is-dismissible">
-					<p><?php echo esc_html__( 'Notification dry run completed. Preview entries were added to the log without sending emails.', 'remindmii' ); ?></p>
+					<p>
+						<?php
+						echo esc_html(
+							sprintf(
+								/* translators: 1: total reminders, 2: preview count */
+								__( 'Notification dry run completed. Evaluated %1$d reminder(s); %2$d preview log entries were added without sending emails.', 'remindmii' ),
+								$total,
+								$previewed
+							)
+						);
+						?>
+					</p>
 				</div>
 			<?php endif; ?>
 

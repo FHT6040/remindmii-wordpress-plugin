@@ -32,18 +32,31 @@ class Remindmii_Cron {
 	 * Process due reminder notifications.
 	 *
 	 * @param bool $dry_run Whether to preview notifications without sending them.
-	 * @return void
+	 * @return array<string, int>
 	 */
 	public function process_notifications( $dry_run = false ) {
+		$summary = array(
+			'total'                => 0,
+			'previewed'            => 0,
+			'sent'                 => 0,
+			'failed'               => 0,
+			'rescheduled'          => 0,
+			'marked_notification'  => 0,
+		);
+
 		$reminders = $this->reminders_repository->get_due_for_notifications();
 
 		if ( empty( $reminders ) ) {
-			return;
+			return $summary;
 		}
 
+		$summary['total'] = count( $reminders );
+
 		foreach ( $reminders as $reminder ) {
-			$this->process_single_reminder( $reminder, (bool) $dry_run );
+			$summary = $this->process_single_reminder( $reminder, (bool) $dry_run, $summary );
 		}
+
+		return $summary;
 	}
 
 	/**
@@ -51,16 +64,18 @@ class Remindmii_Cron {
 	 *
 	 * @param array<string, mixed> $reminder Reminder payload.
 	 * @param bool                 $dry_run  Whether to preview only.
-	 * @return void
+	 * @param array<string, int>   $summary  Running summary.
+	 * @return array<string, int>
 	 */
-	private function process_single_reminder( $reminder, $dry_run = false ) {
+	private function process_single_reminder( $reminder, $dry_run = false, $summary = array() ) {
 		if ( $dry_run ) {
 			$this->log_notification(
 				$reminder,
 				'preview',
 				__( 'Dry run: reminder would be sent.', 'remindmii' )
 			);
-			return;
+			++$summary['previewed'];
+			return $summary;
 		}
 
 		$sent = $this->send_email_notification( $reminder );
@@ -72,15 +87,24 @@ class Remindmii_Cron {
 		);
 
 		if ( ! $sent ) {
-			return;
+			++$summary['failed'];
+			return $summary;
 		}
+
+		++$summary['sent'];
 
 		if ( ! empty( $reminder['is_recurring'] ) ) {
-			$this->reminders_repository->reschedule_recurring( $reminder );
-			return;
+			if ( $this->reminders_repository->reschedule_recurring( $reminder ) ) {
+				++$summary['rescheduled'];
+			}
+			return $summary;
 		}
 
-		$this->reminders_repository->mark_notification_sent( (int) $reminder['id'], (int) $reminder['user_id'] );
+		if ( $this->reminders_repository->mark_notification_sent( (int) $reminder['id'], (int) $reminder['user_id'] ) ) {
+			++$summary['marked_notification'];
+		}
+
+		return $summary;
 	}
 
 	/**
