@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	var loginLink = root.querySelector('[data-remindmii-login-link]');
 	var profileForm = root.querySelector('[data-remindmii-profile-form]');
 	var profileSubmitButton = root.querySelector('[data-remindmii-profile-submit]');
+	var notificationsPanel = root.querySelector('[data-remindmii-notifications-panel]');
+	var notificationsList = root.querySelector('[data-remindmii-notifications-list]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
 	var editingInput = root.querySelector('[data-remindmii-editing-id]');
@@ -51,6 +53,10 @@ document.addEventListener('DOMContentLoaded', function () {
 		profileForm.addEventListener('submit', handleSaveProfile);
 	}
 
+	if (notificationsPanel) {
+		notificationsPanel.hidden = false;
+	}
+
 	if (list) {
 		list.hidden = false;
 	}
@@ -68,7 +74,25 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	loadProfile();
+	loadNotificationHistory();
 	loadCategories().then(loadReminders);
+
+	async function loadNotificationHistory() {
+		if (!notificationsList) {
+			return;
+		}
+
+		notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.loadingNotifications) + '</p></li>';
+
+		try {
+			var response = await apiRequest(config.notificationsUrl + '?limit=10', { method: 'GET' });
+			var items = await response.json();
+			renderNotifications(Array.isArray(items) ? items : []);
+		} catch (error) {
+			renderNotifications([]);
+			setStatus(getErrorMessage(error), true);
+		}
+	}
 
 	async function loadProfile() {
 		try {
@@ -361,6 +385,52 @@ document.addEventListener('DOMContentLoaded', function () {
 		profileForm.elements.pronouns.value = profile.pronouns || '';
 		profileForm.elements.email_notifications.checked = Boolean(profile.email_notifications);
 		profileForm.elements.notification_hours.value = profile.notification_hours || 24;
+	}
+
+	function renderNotifications(items) {
+		if (!notificationsList) {
+			return;
+		}
+
+		notificationsList.innerHTML = '';
+
+		if (!items.length) {
+			notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.noNotifications) + '</p></li>';
+			return;
+		}
+
+		items.forEach(function (item) {
+			var row = document.createElement('li');
+			var statusLabel = getNotificationStatusLabel(item.status);
+			var timestampLabel = item.sent_at ? config.i18n.sentAtLabel : config.i18n.createdAtLabel;
+			var timestampValue = formatDate(item.sent_at || item.created_at);
+			var title = item.title || item.message || config.i18n.notificationHistory;
+			var reminderDate = item.reminder_date ? '<p class="remindmii-notification__meta"><strong>' + escapeHtml(config.i18n.dueLabel) + ':</strong> ' + escapeHtml(formatDate(item.reminder_date)) + '</p>' : '';
+
+			row.className = 'remindmii-notification remindmii-notification--' + escapeHtml(String(item.status || 'sent'));
+			row.innerHTML = '' +
+				'<div class="remindmii-notification__content">' +
+					'<h4>' + escapeHtml(title) + '</h4>' +
+					'<p class="remindmii-notification__meta"><strong>' + escapeHtml(config.i18n.statusLabel || 'Status') + ':</strong> ' + escapeHtml(statusLabel) + '</p>' +
+					'<p class="remindmii-notification__meta"><strong>' + escapeHtml(timestampLabel) + ':</strong> ' + escapeHtml(timestampValue) + '</p>' +
+					reminderDate +
+					'<p class="remindmii-notification__message">' + escapeHtml(item.message || '') + '</p>' +
+				'</div>';
+
+			notificationsList.appendChild(row);
+		});
+	}
+
+	function getNotificationStatusLabel(status) {
+		switch (String(status || '').toLowerCase()) {
+			case 'preview':
+				return config.i18n.statusPreview;
+			case 'failed':
+				return config.i18n.statusFailed;
+			case 'sent':
+			default:
+				return config.i18n.statusSent;
+		}
 	}
 
 	function resetFormState() {

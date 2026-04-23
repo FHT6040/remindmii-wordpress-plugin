@@ -26,6 +26,7 @@ class Remindmii_Shortcodes {
 			array(
 				'restUrl'      => esc_url_raw( rest_url( 'remindmii/v1/reminders' ) ),
 				'categoriesUrl'=> esc_url_raw( rest_url( 'remindmii/v1/categories' ) ),
+				'notificationsUrl' => esc_url_raw( rest_url( 'remindmii/v1/notifications' ) ),
 				'profileUrl'   => esc_url_raw( rest_url( 'remindmii/v1/profile' ) ),
 				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
@@ -71,6 +72,15 @@ class Remindmii_Shortcodes {
 					'saveProfile'      => __( 'Save profile', 'remindmii' ),
 					'savingProfile'    => __( 'Saving profile...', 'remindmii' ),
 					'profileSaved'     => __( 'Profile saved.', 'remindmii' ),
+					'notificationHistory' => __( 'Notification history', 'remindmii' ),
+					'loadingNotifications' => __( 'Loading notifications...', 'remindmii' ),
+					'noNotifications'  => __( 'No notifications yet.', 'remindmii' ),
+					'statusLabel'      => __( 'Status', 'remindmii' ),
+					'sentAtLabel'      => __( 'Sent', 'remindmii' ),
+					'createdAtLabel'   => __( 'Logged', 'remindmii' ),
+					'statusPreview'    => __( 'Preview', 'remindmii' ),
+					'statusSent'       => __( 'Sent', 'remindmii' ),
+					'statusFailed'     => __( 'Failed', 'remindmii' ),
 				),
 			)
 		);

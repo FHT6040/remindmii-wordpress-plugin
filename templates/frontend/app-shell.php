@@ -63,6 +63,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 			</form>
 
+			<div class="remindmii-notifications-panel" data-remindmii-notifications-panel hidden>
+				<h3><?php echo esc_html__( 'Notification history', 'remindmii' ); ?></h3>
+				<ul class="remindmii-notifications" data-remindmii-notifications-list></ul>
+			</div>
+
 		<div class="remindmii-auth-message" data-remindmii-auth-message hidden>
 			<p><?php echo esc_html__( 'You need to be logged in to use Remindmii.', 'remindmii' ); ?></p>
 			<a class="remindmii-button remindmii-button--secondary" data-remindmii-login-link href="#">

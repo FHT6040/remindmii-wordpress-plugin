@@ -59,6 +59,66 @@
 	font-size: 1.05rem;
 }
 
+.remindmii-notifications-panel {
+	display: grid;
+	gap: 12px;
+	padding: 18px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #f8fafc;
+}
+
+.remindmii-notifications-panel h3 {
+	margin: 0;
+	font-size: 1.05rem;
+}
+
+.remindmii-notifications {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+	display: grid;
+	gap: 10px;
+}
+
+.remindmii-notification {
+	padding: 14px;
+	border: 1px solid #e2e8f0;
+	border-radius: 10px;
+	background: #ffffff;
+}
+
+.remindmii-notification--preview {
+	border-left: 4px solid #0284c7;
+}
+
+.remindmii-notification--sent {
+	border-left: 4px solid #059669;
+}
+
+.remindmii-notification--failed {
+	border-left: 4px solid #dc2626;
+}
+
+.remindmii-notification--empty {
+	text-align: center;
+}
+
+.remindmii-notification__content h4 {
+	margin: 0 0 8px;
+	font-size: 1rem;
+}
+
+.remindmii-notification__meta,
+.remindmii-notification__message {
+	margin: 0;
+	color: #475569;
+}
+
+.remindmii-notification__message {
+	margin-top: 8px;
+}
+
 .remindmii-form {
 	display: grid;
 	gap: 16px;

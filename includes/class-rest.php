@@ -6,6 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Remindmii_REST {
 	/**
+	 * Notification logs controller instance.
+	 *
+	 * @var Remindmii_REST_Notification_Logs_Controller
+	 */
+	private $notification_logs_controller;
+
+	/**
 	 * Profile controller instance.
 	 *
 	 * @var Remindmii_REST_Profile_Controller
@@ -30,6 +37,7 @@ class Remindmii_REST {
 	 * Constructor.
 	 */
 	public function __construct() {
+		$this->notification_logs_controller = new Remindmii_REST_Notification_Logs_Controller( new Remindmii_Notification_Logs_Repository() );
 		$profile_repository          = new Remindmii_User_Profiles_Repository();
 		$this->profile_controller    = new Remindmii_REST_Profile_Controller( $profile_repository );
 		$categories_repository      = new Remindmii_Categories_Repository();
@@ -55,6 +63,7 @@ class Remindmii_REST {
 	 * @return void
 	 */
 	public function register_routes() {
+		$this->notification_logs_controller->register_routes();
 		$this->profile_controller->register_routes();
 		$this->categories_controller->register_routes();
 		$this->reminders_controller->register_routes();
