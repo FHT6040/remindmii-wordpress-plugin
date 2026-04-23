@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var notificationsCount = root.querySelector('[data-remindmii-notifications-count]');
 	var notificationsFilter = root.querySelector('[data-remindmii-notifications-filter]');
 	var notificationsDateFilter = root.querySelector('[data-remindmii-notifications-date-filter]');
+	var notificationsSearchInput = root.querySelector('[data-remindmii-notifications-search]');
 	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
 	var notificationsLoadMoreButton = root.querySelector('[data-remindmii-notifications-load-more]');
 	var form = root.querySelector('[data-remindmii-form]');
@@ -35,6 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var notificationOffset = 0;
 	var notificationsLimit = 10;
 	var notificationsHasMore = false;
+	var notificationsSearchTimer = null;
 
 	if (!config.isLoggedIn) {
 		if (status) {
@@ -78,6 +80,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
+	if (notificationsSearchInput) {
+		notificationsSearchInput.addEventListener('input', function () {
+			if (notificationsSearchTimer) {
+				window.clearTimeout(notificationsSearchTimer);
+			}
+
+			notificationsSearchTimer = window.setTimeout(function () {
+				loadNotificationHistory({ append: false });
+			}, 300);
+		});
+	}
+
 	if (notificationsRefreshButton) {
 		notificationsRefreshButton.addEventListener('click', function () {
 			loadNotificationHistory({ manualRefresh: true, append: false });
@@ -116,10 +130,15 @@ document.addEventListener('DOMContentLoaded', function () {
 		var isManualRefresh = Boolean(options.manualRefresh);
 		var requestOffset = append ? notificationOffset : 0;
 		var sinceDays = notificationsDateFilter ? parseInt(notificationsDateFilter.value || '0', 10) : 0;
+		var searchQuery = notificationsSearchInput ? String(notificationsSearchInput.value || '').trim() : '';
 		var notificationsUrl = config.notificationsUrl + '?limit=' + notificationsLimit + '&offset=' + requestOffset;
 
 		if (sinceDays > 0) {
 			notificationsUrl += '&since_days=' + sinceDays;
+		}
+
+		if (searchQuery) {
+			notificationsUrl += '&q=' + encodeURIComponent(searchQuery);
 		}
 
 		if (!notificationsList) {

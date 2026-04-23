@@ -83,6 +83,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<option value="30"><?php echo esc_html__( 'Last 30 days', 'remindmii' ); ?></option>
 						</select>
 					</label>
+					<label class="remindmii-field remindmii-field--compact">
+						<span><?php echo esc_html__( 'Search', 'remindmii' ); ?></span>
+						<input type="search" data-remindmii-notifications-search placeholder="<?php echo esc_attr__( 'Search notifications...', 'remindmii' ); ?>" />
+					</label>
 					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-refresh>
 						<?php echo esc_html__( 'Refresh history', 'remindmii' ); ?>
 					</button>

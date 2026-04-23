@@ -23,15 +23,17 @@ class Remindmii_Notification_Logs_Repository {
 	 * @param int $limit   Number of items to return.
 	 * @param int $offset  Offset for pagination.
 	 * @param int $since_days Optional date window in days (0 for all).
+	 * @param string $search Optional text search against message/context.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function get_recent_by_user( $user_id, $limit = 10, $offset = 0, $since_days = 0 ) {
+	public function get_recent_by_user( $user_id, $limit = 10, $offset = 0, $since_days = 0, $search = '' ) {
 		global $wpdb;
 
 		$user_id    = absint( $user_id );
 		$limit      = max( 1, min( 50, absint( $limit ) ) );
 		$offset     = max( 0, absint( $offset ) );
 		$since_days = in_array( absint( $since_days ), array( 7, 30 ), true ) ? absint( $since_days ) : 0;
+		$search     = trim( (string) $search );
 
 		if ( $user_id <= 0 ) {
 			return array();
@@ -44,6 +46,13 @@ class Remindmii_Notification_Logs_Repository {
 			$since_timestamp = gmdate( 'Y-m-d H:i:s', time() - ( $since_days * 86400 ) );
 			$where_clause   .= ' AND created_at >= %s';
 			$query_args[]    = $since_timestamp;
+		}
+
+		if ( '' !== $search ) {
+			$like_value      = '%' . $wpdb->esc_like( $search ) . '%';
+			$where_clause   .= ' AND (message LIKE %s OR context LIKE %s)';
+			$query_args[]    = $like_value;
+			$query_args[]    = $like_value;
 		}
 
 		$query_args[] = $limit;

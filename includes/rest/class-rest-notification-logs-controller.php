@@ -63,10 +63,11 @@ class Remindmii_REST_Notification_Logs_Controller {
 		$limit      = absint( $request->get_param( 'limit' ) );
 		$offset     = absint( $request->get_param( 'offset' ) );
 		$since_days = absint( $request->get_param( 'since_days' ) );
+		$search     = sanitize_text_field( wp_unslash( (string) $request->get_param( 'q' ) ) );
 		$limit      = $limit > 0 ? $limit : 10;
 		$offset     = $offset > 0 ? $offset : 0;
 		$since_days = in_array( $since_days, array( 7, 30 ), true ) ? $since_days : 0;
-		$items      = $this->repository->get_recent_by_user( get_current_user_id(), $limit, $offset, $since_days );
+		$items      = $this->repository->get_recent_by_user( get_current_user_id(), $limit, $offset, $since_days, $search );
 
 		return rest_ensure_response(
 			array(
