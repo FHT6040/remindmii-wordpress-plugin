@@ -82,6 +82,8 @@ class Remindmii_Shortcodes {
 					'last30Days'       => __( 'Last 30 days', 'remindmii' ),
 					'refreshHistory'   => __( 'Refresh history', 'remindmii' ),
 					'refreshingHistory' => __( 'Refreshing history...', 'remindmii' ),
+					'exportHistory'    => __( 'Export CSV', 'remindmii' ),
+					'noNotificationsToExport' => __( 'No notifications to export.', 'remindmii' ),
 					'loadMoreHistory'  => __( 'Load more', 'remindmii' ),
 					'loadingMoreHistory' => __( 'Loading more...', 'remindmii' ),
 					'historyCount'      => __( 'Showing %1$d of %2$d loaded', 'remindmii' ),

@@ -90,6 +90,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-refresh>
 						<?php echo esc_html__( 'Refresh history', 'remindmii' ); ?>
 					</button>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-export>
+						<?php echo esc_html__( 'Export CSV', 'remindmii' ); ?>
+					</button>
 				</div>
 				<ul class="remindmii-notifications" data-remindmii-notifications-list></ul>
 				<div class="remindmii-notifications-footer">

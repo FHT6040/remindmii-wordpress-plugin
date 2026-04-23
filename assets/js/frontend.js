@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var notificationsDateFilter = root.querySelector('[data-remindmii-notifications-date-filter]');
 	var notificationsSearchInput = root.querySelector('[data-remindmii-notifications-search]');
 	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
+	var notificationsExportButton = root.querySelector('[data-remindmii-notifications-export]');
 	var notificationsLoadMoreButton = root.querySelector('[data-remindmii-notifications-load-more]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
@@ -95,6 +96,12 @@ document.addEventListener('DOMContentLoaded', function () {
 	if (notificationsRefreshButton) {
 		notificationsRefreshButton.addEventListener('click', function () {
 			loadNotificationHistory({ manualRefresh: true, append: false });
+		});
+	}
+
+	if (notificationsExportButton) {
+		notificationsExportButton.addEventListener('click', function () {
+			exportNotificationsCsv();
 		});
 	}
 
@@ -489,14 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			return;
 		}
 
-		var activeFilter = notificationsFilter ? String(notificationsFilter.value || 'all') : 'all';
-		var visibleItems = items.filter(function (item) {
-			if (activeFilter === 'all') {
-				return true;
-			}
-
-			return String(item.status || '').toLowerCase() === activeFilter;
-		});
+		var visibleItems = getVisibleNotificationItems(items);
 
 		notificationsList.innerHTML = '';
 
@@ -536,6 +536,62 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 
 		updateNotificationsCount(visibleItems.length, items.length);
+	}
+
+	function getVisibleNotificationItems(items) {
+		var activeFilter = notificationsFilter ? String(notificationsFilter.value || 'all') : 'all';
+
+		return items.filter(function (item) {
+			if (activeFilter === 'all') {
+				return true;
+			}
+
+			return String(item.status || '').toLowerCase() === activeFilter;
+		});
+	}
+
+	function exportNotificationsCsv() {
+		var visibleItems = getVisibleNotificationItems(notificationItems);
+
+		if (!visibleItems.length) {
+			setStatus(config.i18n.noNotificationsToExport, true);
+			return;
+		}
+
+		var csvLines = [
+			['id', 'status', 'channel', 'title', 'message', 'sent_at', 'created_at', 'reminder_id', 'reminder_date'].join(',')
+		];
+
+		visibleItems.forEach(function (item) {
+			csvLines.push([
+				csvCell(item.id),
+				csvCell(item.status),
+				csvCell(item.channel),
+				csvCell(item.title),
+				csvCell(item.message),
+				csvCell(item.sent_at),
+				csvCell(item.created_at),
+				csvCell(item.reminder_id),
+				csvCell(item.reminder_date)
+			].join(','));
+		});
+
+		var blob = new window.Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+		var downloadUrl = window.URL.createObjectURL(blob);
+		var link = document.createElement('a');
+		var dateStamp = new Date().toISOString().slice(0, 10);
+
+		link.href = downloadUrl;
+		link.download = 'remindmii-notifications-' + dateStamp + '.csv';
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		window.URL.revokeObjectURL(downloadUrl);
+	}
+
+	function csvCell(value) {
+		var text = String(value == null ? '' : value);
+		return '"' + text.replace(/"/g, '""') + '"';
 	}
 
 	function updateNotificationsCount(visibleCount, loadedCount) {
