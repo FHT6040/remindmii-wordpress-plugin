@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var profileSubmitButton = root.querySelector('[data-remindmii-profile-submit]');
 	var notificationsPanel = root.querySelector('[data-remindmii-notifications-panel]');
 	var notificationsList = root.querySelector('[data-remindmii-notifications-list]');
+	var notificationsCount = root.querySelector('[data-remindmii-notifications-count]');
 	var notificationsFilter = root.querySelector('[data-remindmii-notifications-filter]');
 	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
 	var notificationsLoadMoreButton = root.querySelector('[data-remindmii-notifications-load-more]');
@@ -469,6 +470,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 		if (!visibleItems.length) {
 			notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.noNotifications) + '</p></li>';
+			updateNotificationsCount(0, items.length);
 			return;
 		}
 
@@ -500,6 +502,28 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			notificationsList.appendChild(row);
 		});
+
+		updateNotificationsCount(visibleItems.length, items.length);
+	}
+
+	function updateNotificationsCount(visibleCount, loadedCount) {
+		if (!notificationsCount) {
+			return;
+		}
+
+		if (loadedCount <= 0) {
+			notificationsCount.textContent = '';
+			return;
+		}
+
+		if (visibleCount === loadedCount) {
+			notificationsCount.textContent = config.i18n.historyCountAll.replace('%1$d', String(loadedCount));
+			return;
+		}
+
+		notificationsCount.textContent = config.i18n.historyCount
+			.replace('%1$d', String(visibleCount))
+			.replace('%2$d', String(loadedCount));
 	}
 
 	function updateLoadMoreVisibility() {
