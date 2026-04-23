@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	var profileSubmitButton = root.querySelector('[data-remindmii-profile-submit]');
 	var notificationsPanel = root.querySelector('[data-remindmii-notifications-panel]');
 	var notificationsList = root.querySelector('[data-remindmii-notifications-list]');
+	var notificationsFilter = root.querySelector('[data-remindmii-notifications-filter]');
+	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
 	var editingInput = root.querySelector('[data-remindmii-editing-id]');
@@ -26,6 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var submitButton = root.querySelector('[data-remindmii-submit]');
 	var categories = [];
 	var reminders = [];
+	var notificationItems = [];
 
 	if (!config.isLoggedIn) {
 		if (status) {
@@ -57,6 +60,18 @@ document.addEventListener('DOMContentLoaded', function () {
 		notificationsPanel.hidden = false;
 	}
 
+	if (notificationsFilter) {
+		notificationsFilter.addEventListener('change', function () {
+			renderNotifications(notificationItems);
+		});
+	}
+
+	if (notificationsRefreshButton) {
+		notificationsRefreshButton.addEventListener('click', function () {
+			loadNotificationHistory(true);
+		});
+	}
+
 	if (list) {
 		list.hidden = false;
 	}
@@ -77,9 +92,14 @@ document.addEventListener('DOMContentLoaded', function () {
 	loadNotificationHistory();
 	loadCategories().then(loadReminders);
 
-	async function loadNotificationHistory() {
+	async function loadNotificationHistory(isManualRefresh) {
 		if (!notificationsList) {
 			return;
+		}
+
+		if (notificationsRefreshButton) {
+			notificationsRefreshButton.disabled = true;
+			notificationsRefreshButton.textContent = isManualRefresh ? config.i18n.refreshingHistory : config.i18n.refreshHistory;
 		}
 
 		notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.loadingNotifications) + '</p></li>';
@@ -87,10 +107,17 @@ document.addEventListener('DOMContentLoaded', function () {
 		try {
 			var response = await apiRequest(config.notificationsUrl + '?limit=10', { method: 'GET' });
 			var items = await response.json();
-			renderNotifications(Array.isArray(items) ? items : []);
+			notificationItems = Array.isArray(items) ? items : [];
+			renderNotifications(notificationItems);
 		} catch (error) {
-			renderNotifications([]);
+			notificationItems = [];
+			renderNotifications(notificationItems);
 			setStatus(getErrorMessage(error), true);
+		} finally {
+			if (notificationsRefreshButton) {
+				notificationsRefreshButton.disabled = false;
+				notificationsRefreshButton.textContent = config.i18n.refreshHistory;
+			}
 		}
 	}
 
@@ -392,14 +419,23 @@ document.addEventListener('DOMContentLoaded', function () {
 			return;
 		}
 
+		var activeFilter = notificationsFilter ? String(notificationsFilter.value || 'all') : 'all';
+		var visibleItems = items.filter(function (item) {
+			if (activeFilter === 'all') {
+				return true;
+			}
+
+			return String(item.status || '').toLowerCase() === activeFilter;
+		});
+
 		notificationsList.innerHTML = '';
 
-		if (!items.length) {
+		if (!visibleItems.length) {
 			notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.noNotifications) + '</p></li>';
 			return;
 		}
 
-		items.forEach(function (item) {
+		visibleItems.forEach(function (item) {
 			var row = document.createElement('li');
 			var statusLabel = getNotificationStatusLabel(item.status);
 			var timestampLabel = item.sent_at ? config.i18n.sentAtLabel : config.i18n.createdAtLabel;

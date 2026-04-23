@@ -73,6 +73,17 @@
 	font-size: 1.05rem;
 }
 
+.remindmii-notifications-toolbar {
+	display: flex;
+	align-items: end;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.remindmii-field--compact {
+	max-width: 220px;
+}
+
 .remindmii-notifications {
 	list-style: none;
 	padding: 0;

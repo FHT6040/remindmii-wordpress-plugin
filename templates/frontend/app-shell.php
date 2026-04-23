@@ -65,6 +65,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 			<div class="remindmii-notifications-panel" data-remindmii-notifications-panel hidden>
 				<h3><?php echo esc_html__( 'Notification history', 'remindmii' ); ?></h3>
+				<div class="remindmii-notifications-toolbar">
+					<label class="remindmii-field remindmii-field--compact">
+						<span><?php echo esc_html__( 'Status', 'remindmii' ); ?></span>
+						<select data-remindmii-notifications-filter>
+							<option value="all"><?php echo esc_html__( 'All statuses', 'remindmii' ); ?></option>
+							<option value="sent"><?php echo esc_html__( 'Sent', 'remindmii' ); ?></option>
+							<option value="failed"><?php echo esc_html__( 'Failed', 'remindmii' ); ?></option>
+							<option value="preview"><?php echo esc_html__( 'Preview', 'remindmii' ); ?></option>
+						</select>
+					</label>
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-refresh>
+						<?php echo esc_html__( 'Refresh history', 'remindmii' ); ?>
+					</button>
+				</div>
 				<ul class="remindmii-notifications" data-remindmii-notifications-list></ul>
 			</div>
 
