@@ -22,30 +22,41 @@ class Remindmii_Notification_Logs_Repository {
 	 * @param int $user_id WordPress user ID.
 	 * @param int $limit   Number of items to return.
 	 * @param int $offset  Offset for pagination.
+	 * @param int $since_days Optional date window in days (0 for all).
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function get_recent_by_user( $user_id, $limit = 10, $offset = 0 ) {
+	public function get_recent_by_user( $user_id, $limit = 10, $offset = 0, $since_days = 0 ) {
 		global $wpdb;
 
-		$user_id = absint( $user_id );
-		$limit   = max( 1, min( 50, absint( $limit ) ) );
-		$offset  = max( 0, absint( $offset ) );
+		$user_id    = absint( $user_id );
+		$limit      = max( 1, min( 50, absint( $limit ) ) );
+		$offset     = max( 0, absint( $offset ) );
+		$since_days = in_array( absint( $since_days ), array( 7, 30 ), true ) ? absint( $since_days ) : 0;
 
 		if ( $user_id <= 0 ) {
 			return array();
 		}
 
-		$results = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT id, reminder_id, notification_type, channel, status, message, context, sent_at, created_at
+		$where_clause = 'WHERE user_id = %d';
+		$query_args   = array( $user_id );
+
+		if ( $since_days > 0 ) {
+			$since_timestamp = gmdate( 'Y-m-d H:i:s', time() - ( $since_days * 86400 ) );
+			$where_clause   .= ' AND created_at >= %s';
+			$query_args[]    = $since_timestamp;
+		}
+
+		$query_args[] = $limit;
+		$query_args[] = $offset;
+
+		$sql = "SELECT id, reminder_id, notification_type, channel, status, message, context, sent_at, created_at
 				FROM {$this->table_name()}
-				WHERE user_id = %d
+				{$where_clause}
 				ORDER BY id DESC
-				LIMIT %d OFFSET %d",
-				$user_id,
-				$limit,
-				$offset
-			),
+				LIMIT %d OFFSET %d";
+
+		$results = $wpdb->get_results(
+			$wpdb->prepare( $sql, ...$query_args ),
 			ARRAY_A
 		);
 

@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var notificationsList = root.querySelector('[data-remindmii-notifications-list]');
 	var notificationsCount = root.querySelector('[data-remindmii-notifications-count]');
 	var notificationsFilter = root.querySelector('[data-remindmii-notifications-filter]');
+	var notificationsDateFilter = root.querySelector('[data-remindmii-notifications-date-filter]');
 	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
 	var notificationsLoadMoreButton = root.querySelector('[data-remindmii-notifications-load-more]');
 	var form = root.querySelector('[data-remindmii-form]');
@@ -71,6 +72,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	}
 
+	if (notificationsDateFilter) {
+		notificationsDateFilter.addEventListener('change', function () {
+			loadNotificationHistory({ append: false });
+		});
+	}
+
 	if (notificationsRefreshButton) {
 		notificationsRefreshButton.addEventListener('click', function () {
 			loadNotificationHistory({ manualRefresh: true, append: false });
@@ -108,6 +115,12 @@ document.addEventListener('DOMContentLoaded', function () {
 		var append = Boolean(options.append);
 		var isManualRefresh = Boolean(options.manualRefresh);
 		var requestOffset = append ? notificationOffset : 0;
+		var sinceDays = notificationsDateFilter ? parseInt(notificationsDateFilter.value || '0', 10) : 0;
+		var notificationsUrl = config.notificationsUrl + '?limit=' + notificationsLimit + '&offset=' + requestOffset;
+
+		if (sinceDays > 0) {
+			notificationsUrl += '&since_days=' + sinceDays;
+		}
 
 		if (!notificationsList) {
 			return;
@@ -128,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
 		}
 
 		try {
-			var response = await apiRequest(config.notificationsUrl + '?limit=' + notificationsLimit + '&offset=' + requestOffset, { method: 'GET' });
+			var response = await apiRequest(notificationsUrl, { method: 'GET' });
 			var payload = await response.json();
 			var items = payload && Array.isArray(payload.items) ? payload.items : [];
 

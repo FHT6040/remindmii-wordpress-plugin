@@ -75,6 +75,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<option value="preview"><?php echo esc_html__( 'Preview', 'remindmii' ); ?></option>
 						</select>
 					</label>
+					<label class="remindmii-field remindmii-field--compact">
+						<span><?php echo esc_html__( 'Date range', 'remindmii' ); ?></span>
+						<select data-remindmii-notifications-date-filter>
+							<option value="all"><?php echo esc_html__( 'All dates', 'remindmii' ); ?></option>
+							<option value="7"><?php echo esc_html__( 'Last 7 days', 'remindmii' ); ?></option>
+							<option value="30"><?php echo esc_html__( 'Last 30 days', 'remindmii' ); ?></option>
+						</select>
+					</label>
 					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-refresh>
 						<?php echo esc_html__( 'Refresh history', 'remindmii' ); ?>
 					</button>

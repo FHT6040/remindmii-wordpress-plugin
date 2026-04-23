@@ -60,11 +60,13 @@ class Remindmii_REST_Notification_Logs_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_items( $request ) {
-		$limit  = absint( $request->get_param( 'limit' ) );
-		$offset = absint( $request->get_param( 'offset' ) );
-		$limit  = $limit > 0 ? $limit : 10;
-		$offset = $offset > 0 ? $offset : 0;
-		$items  = $this->repository->get_recent_by_user( get_current_user_id(), $limit, $offset );
+		$limit      = absint( $request->get_param( 'limit' ) );
+		$offset     = absint( $request->get_param( 'offset' ) );
+		$since_days = absint( $request->get_param( 'since_days' ) );
+		$limit      = $limit > 0 ? $limit : 10;
+		$offset     = $offset > 0 ? $offset : 0;
+		$since_days = in_array( $since_days, array( 7, 30 ), true ) ? $since_days : 0;
+		$items      = $this->repository->get_recent_by_user( get_current_user_id(), $limit, $offset, $since_days );
 
 		return rest_ensure_response(
 			array(
