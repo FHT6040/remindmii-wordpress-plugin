@@ -192,14 +192,16 @@ class Remindmii_Admin {
 		}
 
 		check_admin_referer( 'remindmii_run_notifications' );
+		$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( (string) $_POST['mode'] ) ) : 'live';
+		$mode = in_array( $mode, array( 'live', 'dry-run' ), true ) ? $mode : 'live';
 
-		do_action( 'remindmii_process_notifications' );
+		do_action( 'remindmii_process_notifications', 'dry-run' === $mode );
 
 		wp_safe_redirect(
 			add_query_arg(
 				array(
 					'page'               => 'remindmii',
-					'remindmii_notice'   => 'notifications_ran',
+					'remindmii_notice'   => 'dry-run' === $mode ? 'notifications_dry_run' : 'notifications_ran',
 				),
 				admin_url( 'admin.php' )
 			)
@@ -213,24 +215,52 @@ class Remindmii_Admin {
 	 * @param int $limit Number of rows to return.
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function get_notification_logs( $limit = 30 ) {
+	private function get_notification_logs( $limit = 30, $filters = array() ) {
 		global $wpdb;
 
-		$limit = max( 1, min( 200, absint( $limit ) ) );
-		$table = $wpdb->prefix . 'remindmii_notifications_log';
+		$limit        = max( 1, min( 200, absint( $limit ) ) );
+		$table        = $wpdb->prefix . 'remindmii_notifications_log';
+		$where_sql    = '1=1';
+		$query_params = array();
 
-		$results = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT id, user_id, reminder_id, notification_type, channel, status, message, sent_at, created_at
-				FROM {$table}
-				ORDER BY id DESC
-				LIMIT %d",
-				$limit
-			),
-			ARRAY_A
-		);
+		if ( ! empty( $filters['status'] ) ) {
+			$where_sql      .= ' AND status = %s';
+			$query_params[] = $filters['status'];
+		}
+
+		if ( ! empty( $filters['channel'] ) ) {
+			$where_sql      .= ' AND channel = %s';
+			$query_params[] = $filters['channel'];
+		}
+
+		$query_params[] = $limit;
+		$sql            = "SELECT id, user_id, reminder_id, notification_type, channel, status, message, sent_at, created_at
+			FROM {$table}
+			WHERE {$where_sql}
+			ORDER BY id DESC
+			LIMIT %d";
+
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $query_params ), ARRAY_A );
 
 		return is_array( $results ) ? $results : array();
+	}
+
+	/**
+	 * Read notification log filters from the current request.
+	 *
+	 * @return array<string, string>
+	 */
+	private function get_notification_log_filters() {
+		$status  = isset( $_GET['log_status'] ) ? sanitize_key( wp_unslash( (string) $_GET['log_status'] ) ) : '';
+		$channel = isset( $_GET['log_channel'] ) ? sanitize_key( wp_unslash( (string) $_GET['log_channel'] ) ) : '';
+
+		$allowed_statuses = array( '', 'sent', 'failed', 'preview' );
+		$allowed_channels = array( '', 'email' );
+
+		return array(
+			'status'  => in_array( $status, $allowed_statuses, true ) ? $status : '',
+			'channel' => in_array( $channel, $allowed_channels, true ) ? $channel : '',
+		);
 	}
 
 	/**
@@ -243,8 +273,9 @@ class Remindmii_Admin {
 			return;
 		}
 
-		$notice = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
-		$logs   = $this->get_notification_logs();
+		$notice  = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
+		$filters = $this->get_notification_log_filters();
+		$logs    = $this->get_notification_logs( 30, $filters );
 
 		?>
 		<div class="wrap remindmii-admin-page">
@@ -254,6 +285,12 @@ class Remindmii_Admin {
 			<?php if ( 'notifications_ran' === $notice ) : ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php echo esc_html__( 'Notification processing was run successfully.', 'remindmii' ); ?></p>
+				</div>
+			<?php endif; ?>
+
+			<?php if ( 'notifications_dry_run' === $notice ) : ?>
+				<div class="notice notice-info is-dismissible">
+					<p><?php echo esc_html__( 'Notification dry run completed. Preview entries were added to the log without sending emails.', 'remindmii' ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -271,8 +308,38 @@ class Remindmii_Admin {
 
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="remindmii-admin-inline-form">
 					<input type="hidden" name="action" value="remindmii_run_notifications" />
+					<input type="hidden" name="mode" value="live" />
 					<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
 					<?php submit_button( __( 'Run Notifications Now', 'remindmii' ), 'secondary', 'submit', false ); ?>
+				</form>
+
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="remindmii-admin-inline-form">
+					<input type="hidden" name="action" value="remindmii_run_notifications" />
+					<input type="hidden" name="mode" value="dry-run" />
+					<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
+					<?php submit_button( __( 'Dry Run Notifications', 'remindmii' ), 'button', 'submit', false ); ?>
+				</form>
+
+				<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="remindmii-admin-filters-form">
+					<input type="hidden" name="page" value="remindmii" />
+					<label for="remindmii_log_status">
+						<span><?php echo esc_html__( 'Status', 'remindmii' ); ?></span>
+						<select id="remindmii_log_status" name="log_status">
+							<option value=""><?php echo esc_html__( 'All statuses', 'remindmii' ); ?></option>
+							<option value="sent" <?php selected( $filters['status'], 'sent' ); ?>><?php echo esc_html__( 'Sent', 'remindmii' ); ?></option>
+							<option value="failed" <?php selected( $filters['status'], 'failed' ); ?>><?php echo esc_html__( 'Failed', 'remindmii' ); ?></option>
+							<option value="preview" <?php selected( $filters['status'], 'preview' ); ?>><?php echo esc_html__( 'Preview', 'remindmii' ); ?></option>
+						</select>
+					</label>
+					<label for="remindmii_log_channel">
+						<span><?php echo esc_html__( 'Channel', 'remindmii' ); ?></span>
+						<select id="remindmii_log_channel" name="log_channel">
+							<option value=""><?php echo esc_html__( 'All channels', 'remindmii' ); ?></option>
+							<option value="email" <?php selected( $filters['channel'], 'email' ); ?>><?php echo esc_html__( 'Email', 'remindmii' ); ?></option>
+						</select>
+					</label>
+					<?php submit_button( __( 'Filter Logs', 'remindmii' ), 'secondary', '', false ); ?>
+					<a class="button button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=remindmii' ) ); ?>"><?php echo esc_html__( 'Reset filters', 'remindmii' ); ?></a>
 				</form>
 
 				<div class="remindmii-table-wrap">

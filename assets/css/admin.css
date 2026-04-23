@@ -33,6 +33,24 @@
 	margin: 12px 0 18px;
 }
 
+.remindmii-admin-inline-form,
+.remindmii-admin-filters-form {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.remindmii-admin-filters-form {
+	margin: 0 0 18px;
+}
+
+.remindmii-admin-filters-form label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
 .remindmii-table-wrap {
 	overflow-x: auto;
 }

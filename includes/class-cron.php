@@ -25,15 +25,16 @@ class Remindmii_Cron {
 	 * @return void
 	 */
 	public function register_hooks() {
-		add_action( 'remindmii_process_notifications', array( $this, 'process_notifications' ) );
+		add_action( 'remindmii_process_notifications', array( $this, 'process_notifications' ), 10, 1 );
 	}
 
 	/**
 	 * Process due reminder notifications.
 	 *
+	 * @param bool $dry_run Whether to preview notifications without sending them.
 	 * @return void
 	 */
-	public function process_notifications() {
+	public function process_notifications( $dry_run = false ) {
 		$reminders = $this->reminders_repository->get_due_for_notifications();
 
 		if ( empty( $reminders ) ) {
@@ -41,7 +42,7 @@ class Remindmii_Cron {
 		}
 
 		foreach ( $reminders as $reminder ) {
-			$this->process_single_reminder( $reminder );
+			$this->process_single_reminder( $reminder, (bool) $dry_run );
 		}
 	}
 
@@ -49,9 +50,19 @@ class Remindmii_Cron {
 	 * Send and record a single reminder notification.
 	 *
 	 * @param array<string, mixed> $reminder Reminder payload.
+	 * @param bool                 $dry_run  Whether to preview only.
 	 * @return void
 	 */
-	private function process_single_reminder( $reminder ) {
+	private function process_single_reminder( $reminder, $dry_run = false ) {
+		if ( $dry_run ) {
+			$this->log_notification(
+				$reminder,
+				'preview',
+				__( 'Dry run: reminder would be sent.', 'remindmii' )
+			);
+			return;
+		}
+
 		$sent = $this->send_email_notification( $reminder );
 
 		$this->log_notification(
