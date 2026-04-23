@@ -343,7 +343,6 @@ document.addEventListener('DOMContentLoaded', function () {
 		reminders.forEach(function (reminder) {
 			var item = document.createElement('li');
 			item.className = 'remindmii-reminder' + (reminder.is_completed ? ' remindmii-reminder--completed' : '');
-			item.setAttribute('data-remindmii-reminder-id', String(reminder.id));
 
 			var dueDate = formatDate(reminder.reminder_date);
 			var categoryName = getCategoryName(reminder.category_id);
@@ -467,25 +466,16 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	function focusReminder(reminderId) {
-		if (!list) {
+		var reminder = reminders.find(function (item) {
+			return String(item.id) === String(reminderId);
+		});
+
+		if (!reminder) {
 			setStatus(config.i18n.reminderUnavailable, true);
 			return;
 		}
 
-		var target = list.querySelector('[data-remindmii-reminder-id="' + cssEscape(String(reminderId)) + '"]');
-
-		if (!target) {
-			setStatus(config.i18n.reminderUnavailable, true);
-			return;
-		}
-
-		target.classList.remove('remindmii-reminder--highlight');
-		void target.offsetWidth;
-		target.classList.add('remindmii-reminder--highlight');
-		target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-		window.setTimeout(function () {
-			target.classList.remove('remindmii-reminder--highlight');
-		}, 2200);
+		beginEditReminder(reminder);
 	}
 
 	function getNotificationStatusLabel(status) {
@@ -705,11 +695,4 @@ document.addEventListener('DOMContentLoaded', function () {
 			.replace(/'/g, '&#039;');
 	}
 
-	function cssEscape(value) {
-		if (window.CSS && typeof window.CSS.escape === 'function') {
-			return window.CSS.escape(value);
-		}
-
-		return String(value).replace(/(["\\#.;:?+*~'!^$\[\]()=>|/@])/g, '\\$1');
-	}
 });
