@@ -134,6 +134,10 @@
 	margin-top: 10px;
 }
 
+.remindmii-notifications-footer {
+	margin-top: 4px;
+}
+
 .remindmii-form {
 	display: grid;
 	gap: 16px;

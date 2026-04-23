@@ -80,6 +80,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</button>
 				</div>
 				<ul class="remindmii-notifications" data-remindmii-notifications-list></ul>
+				<div class="remindmii-notifications-footer">
+					<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-notifications-load-more hidden>
+						<?php echo esc_html__( 'Load more', 'remindmii' ); ?>
+					</button>
+				</div>
 			</div>
 
 		<div class="remindmii-auth-message" data-remindmii-auth-message hidden>

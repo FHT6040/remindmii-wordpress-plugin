@@ -21,13 +21,15 @@ class Remindmii_Notification_Logs_Repository {
 	 *
 	 * @param int $user_id WordPress user ID.
 	 * @param int $limit   Number of items to return.
+	 * @param int $offset  Offset for pagination.
 	 * @return array<int, array<string, mixed>>
 	 */
-	public function get_recent_by_user( $user_id, $limit = 10 ) {
+	public function get_recent_by_user( $user_id, $limit = 10, $offset = 0 ) {
 		global $wpdb;
 
 		$user_id = absint( $user_id );
 		$limit   = max( 1, min( 50, absint( $limit ) ) );
+		$offset  = max( 0, absint( $offset ) );
 
 		if ( $user_id <= 0 ) {
 			return array();
@@ -39,9 +41,10 @@ class Remindmii_Notification_Logs_Repository {
 				FROM {$this->table_name()}
 				WHERE user_id = %d
 				ORDER BY id DESC
-				LIMIT %d",
+				LIMIT %d OFFSET %d",
 				$user_id,
-				$limit
+				$limit,
+				$offset
 			),
 			ARRAY_A
 		);

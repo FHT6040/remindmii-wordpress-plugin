@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function () {
 	var notificationsList = root.querySelector('[data-remindmii-notifications-list]');
 	var notificationsFilter = root.querySelector('[data-remindmii-notifications-filter]');
 	var notificationsRefreshButton = root.querySelector('[data-remindmii-notifications-refresh]');
+	var notificationsLoadMoreButton = root.querySelector('[data-remindmii-notifications-load-more]');
 	var form = root.querySelector('[data-remindmii-form]');
 	var list = root.querySelector('[data-remindmii-list]');
 	var editingInput = root.querySelector('[data-remindmii-editing-id]');
@@ -29,6 +30,9 @@ document.addEventListener('DOMContentLoaded', function () {
 	var categories = [];
 	var reminders = [];
 	var notificationItems = [];
+	var notificationOffset = 0;
+	var notificationsLimit = 10;
+	var notificationsHasMore = false;
 
 	if (!config.isLoggedIn) {
 		if (status) {
@@ -68,7 +72,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	if (notificationsRefreshButton) {
 		notificationsRefreshButton.addEventListener('click', function () {
-			loadNotificationHistory(true);
+			loadNotificationHistory({ manualRefresh: true, append: false });
+		});
+	}
+
+	if (notificationsLoadMoreButton) {
+		notificationsLoadMoreButton.addEventListener('click', function () {
+			loadNotificationHistory({ append: true });
 		});
 	}
 
@@ -89,10 +99,15 @@ document.addEventListener('DOMContentLoaded', function () {
 	}
 
 	loadProfile();
-	loadNotificationHistory();
+	loadNotificationHistory({ append: false });
 	loadCategories().then(loadReminders);
 
-	async function loadNotificationHistory(isManualRefresh) {
+	async function loadNotificationHistory(options) {
+		options = options || {};
+		var append = Boolean(options.append);
+		var isManualRefresh = Boolean(options.manualRefresh);
+		var requestOffset = append ? notificationOffset : 0;
+
 		if (!notificationsList) {
 			return;
 		}
@@ -102,21 +117,43 @@ document.addEventListener('DOMContentLoaded', function () {
 			notificationsRefreshButton.textContent = isManualRefresh ? config.i18n.refreshingHistory : config.i18n.refreshHistory;
 		}
 
-		notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.loadingNotifications) + '</p></li>';
+		if (notificationsLoadMoreButton) {
+			notificationsLoadMoreButton.disabled = true;
+			notificationsLoadMoreButton.textContent = config.i18n.loadingMoreHistory;
+		}
+
+		if (!append) {
+			notificationsList.innerHTML = '<li class="remindmii-notification remindmii-notification--empty"><p>' + escapeHtml(config.i18n.loadingNotifications) + '</p></li>';
+		}
 
 		try {
-			var response = await apiRequest(config.notificationsUrl + '?limit=10', { method: 'GET' });
-			var items = await response.json();
-			notificationItems = Array.isArray(items) ? items : [];
+			var response = await apiRequest(config.notificationsUrl + '?limit=' + notificationsLimit + '&offset=' + requestOffset, { method: 'GET' });
+			var payload = await response.json();
+			var items = payload && Array.isArray(payload.items) ? payload.items : [];
+
+			notificationItems = append ? notificationItems.concat(items) : items;
+			notificationOffset = payload && typeof payload.next_offset === 'number' ? payload.next_offset : notificationItems.length;
+			notificationsHasMore = Boolean(payload && payload.has_more);
 			renderNotifications(notificationItems);
+			updateLoadMoreVisibility();
 		} catch (error) {
-			notificationItems = [];
+			if (!append) {
+				notificationItems = [];
+				notificationOffset = 0;
+				notificationsHasMore = false;
+			}
 			renderNotifications(notificationItems);
+			updateLoadMoreVisibility();
 			setStatus(getErrorMessage(error), true);
 		} finally {
 			if (notificationsRefreshButton) {
 				notificationsRefreshButton.disabled = false;
 				notificationsRefreshButton.textContent = config.i18n.refreshHistory;
+			}
+
+			if (notificationsLoadMoreButton) {
+				notificationsLoadMoreButton.disabled = false;
+				notificationsLoadMoreButton.textContent = config.i18n.loadMoreHistory;
 			}
 		}
 	}
@@ -463,6 +500,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 			notificationsList.appendChild(row);
 		});
+	}
+
+	function updateLoadMoreVisibility() {
+		if (!notificationsLoadMoreButton) {
+			return;
+		}
+
+		notificationsLoadMoreButton.hidden = !notificationsHasMore;
 	}
 
 	function focusReminder(reminderId) {

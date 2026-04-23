@@ -78,6 +78,8 @@ class Remindmii_Shortcodes {
 					'allStatuses'      => __( 'All statuses', 'remindmii' ),
 					'refreshHistory'   => __( 'Refresh history', 'remindmii' ),
 					'refreshingHistory' => __( 'Refreshing history...', 'remindmii' ),
+					'loadMoreHistory'  => __( 'Load more', 'remindmii' ),
+					'loadingMoreHistory' => __( 'Loading more...', 'remindmii' ),
 					'statusLabel'      => __( 'Status', 'remindmii' ),
 					'openReminder'     => __( 'Open reminder', 'remindmii' ),
 					'reminderUnavailable' => __( 'The linked reminder is no longer available.', 'remindmii' ),
