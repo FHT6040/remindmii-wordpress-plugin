@@ -2066,4 +2066,277 @@ document.addEventListener('DOMContentLoaded', function () {
 		} );
 	})();
 
-});
+        /* ============================================================
+         * Slice 10 — Barcode / QR scanner (html5-qrcode via CDN)
+         * ============================================================ */
+        (function initBarcodeScanner() {
+                var modal     = document.querySelector( '[data-remindmii-barcode-modal]' );
+                var readerEl  = document.querySelector( '[data-remindmii-barcode-reader]' );
+                var closeBtn  = document.querySelector( '[data-remindmii-barcode-close]' );
+                var errorEl   = document.querySelector( '[data-remindmii-barcode-error]' );
+                var triggers  = document.querySelectorAll( '[data-remindmii-barcode-trigger]' );
+
+                if ( ! modal || ! readerEl || ! triggers.length ) { return; }
+
+                var scanner        = null;
+                var isScanning     = false;
+                var targetField    = null;
+                var LIB_URL        = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+
+                function loadLib( cb ) {
+                        if ( window.Html5Qrcode ) { cb(); return; }
+                        var s  = document.createElement( 'script' );
+                        s.src  = LIB_URL;
+                        s.onload = cb;
+                        document.head.appendChild( s );
+                }
+
+                function openModal( field ) {
+                        targetField = field;
+                        if ( errorEl ) { errorEl.setAttribute( 'hidden', '' ); }
+                        modal.removeAttribute( 'hidden' );
+                        loadLib( startScanner );
+                }
+
+                function closeModal() {
+                        modal.setAttribute( 'hidden', '' );
+                        stopScanner();
+                }
+
+                function startScanner() {
+                        if ( isScanning || ! window.Html5Qrcode ) { return; }
+                        try {
+                                scanner = new Html5Qrcode( 'remindmii-barcode-reader' );
+                                scanner.start(
+                                        { facingMode: 'environment' },
+                                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                                        function( text ) {
+                                                stopScanner();
+                                                if ( targetField ) {
+                                                        targetField.value = text;
+                                                        targetField.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+                                                }
+                                                closeModal();
+                                        },
+                                        function() {} /* scan miss — ignore */
+                                );
+                                isScanning = true;
+                        } catch ( err ) {
+                                if ( errorEl ) {
+                                        errorEl.textContent = ( err && err.message ) || 'Camera error.';
+                                        errorEl.removeAttribute( 'hidden' );
+                                }
+                        }
+                }
+
+                function stopScanner() {
+                        if ( scanner && isScanning ) {
+                                scanner.stop().catch( function() {} );
+                                scanner = null;
+                        }
+                        isScanning = false;
+                }
+
+                Array.prototype.forEach.call( triggers, function( btn ) {
+                        btn.addEventListener( 'click', function() {
+                                var sel   = btn.getAttribute( 'data-remindmii-barcode-target' );
+                                var field = sel ? document.querySelector( sel ) : null;
+                                openModal( field );
+                        } );
+                } );
+
+                if ( closeBtn ) { closeBtn.addEventListener( 'click', closeModal ); }
+                modal.addEventListener( 'click', function( e ) { if ( e.target === modal ) { closeModal(); } } );
+                document.addEventListener( 'keydown', function( e ) {
+                        if ( e.key === 'Escape' && ! modal.hasAttribute( 'hidden' ) ) { closeModal(); }
+                } );
+        })();
+
+        /* ============================================================
+         * Slice 10 — OCR scanner (Tesseract.js via CDN)
+         * ============================================================ */
+        (function initOCRScanner() {
+                var modal        = document.querySelector( '[data-remindmii-ocr-modal]' );
+                var closeBtn     = document.querySelector( '[data-remindmii-ocr-close]' );
+                var preview      = document.querySelector( '[data-remindmii-ocr-preview]' );
+                var progressWrap = document.querySelector( '[data-remindmii-ocr-progress]' );
+                var progressBar  = document.querySelector( '[data-remindmii-ocr-progress-bar]' );
+                var progressLbl  = document.querySelector( '[data-remindmii-ocr-progress-label]' );
+                var errorEl      = document.querySelector( '[data-remindmii-ocr-error]' );
+                var fileInput    = document.querySelector( '[data-remindmii-ocr-file]' );
+                var cameraInput  = document.querySelector( '[data-remindmii-ocr-camera]' );
+                var triggers     = document.querySelectorAll( '[data-remindmii-ocr-trigger]' );
+
+                if ( ! modal || ! triggers.length ) { return; }
+
+                var targetField = null;
+                var LIB_URL     = 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';
+
+                function loadLib( cb ) {
+                        if ( window.Tesseract ) { cb(); return; }
+                        var s  = document.createElement( 'script' );
+                        s.src  = LIB_URL;
+                        s.onload = cb;
+                        document.head.appendChild( s );
+                }
+
+                function openModal( field ) {
+                        targetField = field;
+                        resetState();
+                        modal.removeAttribute( 'hidden' );
+                }
+
+                function closeModal() {
+                        modal.setAttribute( 'hidden', '' );
+                        resetState();
+                }
+
+                function resetState() {
+                        if ( preview )      { preview.src = ''; preview.setAttribute( 'hidden', '' ); }
+                        if ( progressWrap ) { progressWrap.setAttribute( 'hidden', '' ); }
+                        if ( errorEl )      { errorEl.setAttribute( 'hidden', '' ); }
+                        if ( progressBar )  { progressBar.style.width = '0%'; }
+                        if ( progressLbl )  { progressLbl.textContent = '0%'; }
+                        if ( fileInput )    { fileInput.value = ''; }
+                        if ( cameraInput )  { cameraInput.value = ''; }
+                }
+
+                function processFile( file ) {
+                        if ( ! file ) { return; }
+                        if ( errorEl )      { errorEl.setAttribute( 'hidden', '' ); }
+                        if ( progressWrap ) { progressWrap.removeAttribute( 'hidden' ); }
+
+                        var reader = new FileReader();
+                        reader.onload = function( e ) {
+                                if ( preview ) { preview.src = e.target.result; preview.removeAttribute( 'hidden' ); }
+                        };
+                        reader.readAsDataURL( file );
+
+                        loadLib( function() {
+                                Tesseract.recognize( file, 'eng+dan+swe+nor+deu', {
+                                        logger: function( m ) {
+                                                if ( m.status === 'recognizing text' ) {
+                                                        var pct = Math.round( m.progress * 100 );
+                                                        if ( progressBar ) { progressBar.style.width = pct + '%'; }
+                                                        if ( progressLbl ) { progressLbl.textContent = pct + '%'; }
+                                                }
+                                        },
+                                } ).then( function( result ) {
+                                        if ( progressWrap ) { progressWrap.setAttribute( 'hidden', '' ); }
+                                        var text = result.data.text.trim();
+                                        if ( text && targetField ) {
+                                                targetField.value = text;
+                                                targetField.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+                                                closeModal();
+                                        } else {
+                                                if ( errorEl ) {
+                                                        errorEl.textContent = 'No text found. Try a clearer photo.';
+                                                        errorEl.removeAttribute( 'hidden' );
+                                                }
+                                        }
+                                } ).catch( function( err ) {
+                                        if ( progressWrap ) { progressWrap.setAttribute( 'hidden', '' ); }
+                                        if ( errorEl ) {
+                                                errorEl.textContent = ( err && err.message ) || 'OCR failed.';
+                                                errorEl.removeAttribute( 'hidden' );
+                                        }
+                                } );
+                        } );
+                }
+
+                Array.prototype.forEach.call( triggers, function( btn ) {
+                        btn.addEventListener( 'click', function() {
+                                var sel   = btn.getAttribute( 'data-remindmii-ocr-target' );
+                                var field = sel ? document.querySelector( sel ) : null;
+                                openModal( field );
+                        } );
+                } );
+
+                if ( closeBtn ) { closeBtn.addEventListener( 'click', closeModal ); }
+                modal.addEventListener( 'click', function( e ) { if ( e.target === modal ) { closeModal(); } } );
+                document.addEventListener( 'keydown', function( e ) {
+                        if ( e.key === 'Escape' && ! modal.hasAttribute( 'hidden' ) ) { closeModal(); }
+                } );
+
+                if ( fileInput ) {
+                        fileInput.addEventListener( 'change', function( e ) { processFile( e.target.files[0] ); } );
+                }
+                if ( cameraInput ) {
+                        cameraInput.addEventListener( 'change', function( e ) { processFile( e.target.files[0] ); } );
+                }
+
+                document.addEventListener( 'click', function( e ) {
+                        if ( e.target.matches( '[data-remindmii-ocr-take-photo]' ) && cameraInput ) { cameraInput.click(); }
+                        if ( e.target.matches( '[data-remindmii-ocr-upload]' ) && fileInput )       { fileInput.click(); }
+                } );
+        })();
+
+        /* ============================================================
+         * Slice 11 — Targeted ads panel
+         * ============================================================ */
+        (function initTargetedAds() {
+                var config   = window.remindmiiFrontend;
+                if ( ! config || ! config.isLoggedIn || ! config.adsUrl ) { return; }
+
+                var panel    = document.querySelector( '[data-remindmii-ads-panel]' );
+                if ( ! panel ) { return; }
+
+                var dismissed = {};
+
+                function esc( str ) {
+                        var d = document.createElement( 'div' );
+                        d.textContent = String( str );
+                        return d.innerHTML;
+                }
+
+                function trackClick( adId ) {
+                        fetch( config.adsUrl + '/' + adId + '/click', {
+                                method:  'POST',
+                                headers: { 'X-WP-Nonce': config.restNonce },
+                        } ).catch( function() {} );
+                }
+
+                function renderAds( ads ) {
+                        var visible = ads.filter( function( a ) { return ! dismissed[ a.id ]; } );
+                        if ( ! visible.length ) { panel.setAttribute( 'hidden', '' ); return; }
+
+                        panel.removeAttribute( 'hidden' );
+                        panel.innerHTML = visible.map( function( ad ) {
+                                var bg  = esc( ad.background_color || '#3B82F6' );
+                                var col = esc( ad.text_color        || '#ffffff' );
+                                return '<div class="remindmii-ad-card" data-ad-id="' + esc( ad.id ) + '" style="background:' + bg + ';color:' + col + '">'
+                                        + '<div class="remindmii-ad-card__top">'
+                                        + ( ad.merchant && ad.merchant.logo_url
+                                                ? '<img class="remindmii-ad-card__logo" src="' + esc( ad.merchant.logo_url ) + '" alt="' + esc( ( ad.merchant || {} ).name || '' ) + '" />'
+                                                : '' )
+                                        + '<div class="remindmii-ad-card__meta">'
+                                        + '<span class="remindmii-ad-card__sponsored">&#128200; Sponsored</span>'
+                                        + ( ad.merchant ? '<span class="remindmii-ad-card__merchant">' + esc( ad.merchant.name ) + '</span>' : '' )
+                                        + '</div>'
+                                        + '<button type="button" class="remindmii-ad-card__dismiss" data-dismiss-ad="' + esc( ad.id ) + '" aria-label="Dismiss">&#x2715;</button>'
+                                        + '</div>'
+                                        + ( ad.image_url ? '<img class="remindmii-ad-card__image" src="' + esc( ad.image_url ) + '" alt="" />' : '' )
+                                        + '<div class="remindmii-ad-card__body">'
+                                        + '<h4 class="remindmii-ad-card__title">' + esc( ad.title ) + '</h4>'
+                                        + ( ad.description ? '<p class="remindmii-ad-card__desc">' + esc( ad.description ) + '</p>' : '' )
+                                        + ( ad.cta_url
+                                                ? '<a class="remindmii-ad-card__cta" href="' + esc( ad.cta_url ) + '" target="_blank" rel="noopener noreferrer" data-track-ad="' + esc( ad.id ) + '">' + esc( ad.cta_text || 'Se tilbud' ) + ' &#8599;</a>'
+                                                : '' )
+                                        + '</div>'
+                                        + '</div>';
+                        } ).join( '' );
+
+                        panel.onclick = function( e ) {
+                                var dis = e.target.closest( '[data-dismiss-ad]' );
+                                if ( dis ) { dismissed[ dis.getAttribute( 'data-dismiss-ad' ) ] = true; renderAds( ads ); return; }
+                                var cta = e.target.closest( '[data-track-ad]' );
+                                if ( cta ) { trackClick( cta.getAttribute( 'data-track-ad' ) ); }
+                        };
+                }
+
+                fetch( config.adsUrl, { headers: { 'X-WP-Nonce': config.restNonce } } )
+                        .then( function( r ) { return r.json(); } )
+                        .then( function( data ) { renderAds( Array.isArray( data ) ? data : [] ); } )
+                        .catch( function() {} );
+        })();
+

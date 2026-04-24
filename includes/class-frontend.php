@@ -34,5 +34,13 @@ class Remindmii_Frontend {
 			REMINDMII_VERSION,
 			true
 		);
+
+		wp_register_script(
+			'remindmii-merchant',
+			REMINDMII_PLUGIN_URL . 'assets/js/merchant.js',
+			array(),
+			REMINDMII_VERSION,
+			true
+		);
 	}
 }

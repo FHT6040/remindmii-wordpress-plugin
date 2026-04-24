@@ -23,6 +23,10 @@ class Remindmii_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_remindmii_run_notifications', array( $this, 'handle_run_notifications' ) );
 		add_action( 'admin_post_remindmii_delete_user_data',  array( $this, 'handle_delete_user_data' ) );
+		add_action( 'admin_post_remindmii_merchant_create',      array( $this, 'handle_merchant_create' ) );
+		add_action( 'admin_post_remindmii_merchant_toggle',      array( $this, 'handle_merchant_toggle' ) );
+		add_action( 'admin_post_remindmii_merchant_assign_user', array( $this, 'handle_merchant_assign_user' ) );
+		add_action( 'admin_post_remindmii_merchant_remove_user', array( $this, 'handle_merchant_remove_user' ) );
 	}
 
 	/**
@@ -281,7 +285,7 @@ class Remindmii_Admin {
 			return;
 		}
 
-		$allowed_tabs = array( 'dashboard', 'users', 'logs', 'settings' );
+		$allowed_tabs = array( 'dashboard', 'users', 'logs', 'settings', 'merchants' );
 		$current_tab  = isset( $_GET['remindmii_tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_tab'] ) ) : 'dashboard';
 		$current_tab  = in_array( $current_tab, $allowed_tabs, true ) ? $current_tab : 'dashboard';
 
@@ -321,6 +325,11 @@ class Remindmii_Admin {
 					<span class="dashicons dashicons-admin-settings"></span>
 					<?php esc_html_e( 'Settings', 'remindmii' ); ?>
 				</a>
+				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants' ), $base_url ) ); ?>"
+				   class="nav-tab <?php echo 'merchants' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-store"></span>
+					<?php esc_html_e( 'Merchants', 'remindmii' ); ?>
+				</a>
 			</nav>
 
 			<div class="remindmii-admin-tab-content">
@@ -335,6 +344,8 @@ class Remindmii_Admin {
 					$this->render_tab_logs( $filters, $logs );
 				} elseif ( 'settings' === $current_tab ) {
 					$this->render_tab_settings();
+				} elseif ( 'merchants' === $current_tab ) {
+					$this->render_tab_merchants();
 				}
 				?>
 			</div>
@@ -696,5 +707,182 @@ $result[] = array(
 }
 
 return $result;
+}
+
+/**
+ * Render the Merchants tab.
+ */
+private function render_tab_merchants() {
+	global $wpdb;
+	$merchants = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}remindmii_merchants ORDER BY id DESC" );
+	$m_users   = $wpdb->get_results(
+		"SELECT mu.*, m.name AS merchant_name, u.user_login, u.user_email
+		 FROM {$wpdb->prefix}remindmii_merchant_users mu
+		 LEFT JOIN {$wpdb->prefix}remindmii_merchants m ON m.id = mu.merchant_id
+		 LEFT JOIN {$wpdb->users} u ON u.ID = mu.user_id
+		 ORDER BY mu.id DESC"
+	);
+	$notice = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
+	$base_url = add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants' ), admin_url( 'admin.php' ) );
+	?>
+	<div class="remindmii-admin-page">
+	<?php if ( $notice ) : ?>
+		<div class="notice notice-success is-dismissible"><p><?php echo esc_html( $notice ); ?></p></div>
+	<?php endif; ?>
+
+	<h2><?php esc_html_e( 'Merchants', 'remindmii' ); ?></h2>
+
+	<!-- Create merchant form -->
+	<div class="remindmii-admin-card" style="max-width:600px;margin-bottom:24px">
+		<h3><?php esc_html_e( 'Add Merchant', 'remindmii' ); ?></h3>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'remindmii_merchant_create', 'remindmii_merchant_nonce' ); ?>
+			<input type="hidden" name="action" value="remindmii_merchant_create" />
+			<table class="form-table">
+				<tr><th><?php esc_html_e( 'Name', 'remindmii' ); ?></th><td><input type="text" name="merchant_name" class="regular-text" required /></td></tr>
+				<tr><th><?php esc_html_e( 'Category', 'remindmii' ); ?></th><td><input type="text" name="merchant_category" class="regular-text" /></td></tr>
+				<tr><th><?php esc_html_e( 'Logo URL', 'remindmii' ); ?></th><td><input type="url" name="merchant_logo_url" class="regular-text" /></td></tr>
+				<tr><th><?php esc_html_e( 'Website', 'remindmii' ); ?></th><td><input type="url" name="merchant_website_url" class="regular-text" /></td></tr>
+			</table>
+			<?php submit_button( __( 'Create Merchant', 'remindmii' ) ); ?>
+		</form>
+	</div>
+
+	<!-- Merchants list -->
+	<table class="wp-list-table widefat fixed striped">
+		<thead><tr>
+			<th><?php esc_html_e( 'ID', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Name', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Category', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Active', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Actions', 'remindmii' ); ?></th>
+		</tr></thead>
+		<tbody>
+		<?php foreach ( (array) $merchants as $m ) : ?>
+			<tr>
+				<td><?php echo esc_html( (string) $m->id ); ?></td>
+				<td><?php echo esc_html( $m->name ); ?></td>
+				<td><?php echo esc_html( $m->category ?? '' ); ?></td>
+				<td><?php echo $m->is_active ? '<span style="color:green">&#10003;</span>' : '<span style="color:red">&#10007;</span>'; ?></td>
+				<td>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+						<?php wp_nonce_field( 'remindmii_merchant_toggle_' . $m->id, 'remindmii_merchant_nonce' ); ?>
+						<input type="hidden" name="action" value="remindmii_merchant_toggle" />
+						<input type="hidden" name="merchant_id" value="<?php echo absint( $m->id ); ?>" />
+						<button type="submit" class="button button-small"><?php echo $m->is_active ? esc_html__( 'Deactivate', 'remindmii' ) : esc_html__( 'Activate', 'remindmii' ); ?></button>
+					</form>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		</tbody>
+	</table>
+
+	<!-- Assign WP user to merchant -->
+	<h2 style="margin-top:32px"><?php esc_html_e( 'Assign User to Merchant', 'remindmii' ); ?></h2>
+	<div class="remindmii-admin-card" style="max-width:600px;margin-bottom:24px">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+			<?php wp_nonce_field( 'remindmii_merchant_assign_user', 'remindmii_merchant_nonce' ); ?>
+			<input type="hidden" name="action" value="remindmii_merchant_assign_user" />
+			<table class="form-table">
+				<tr><th><?php esc_html_e( 'WP User ID', 'remindmii' ); ?></th><td><input type="number" name="wp_user_id" class="small-text" min="1" required /></td></tr>
+				<tr><th><?php esc_html_e( 'Merchant', 'remindmii' ); ?></th><td>
+					<select name="assign_merchant_id">
+					<?php foreach ( (array) $merchants as $m ) : ?>
+						<option value="<?php echo absint( $m->id ); ?>"><?php echo esc_html( $m->name ); ?></option>
+					<?php endforeach; ?>
+					</select>
+				</td></tr>
+			</table>
+			<?php submit_button( __( 'Assign User', 'remindmii' ) ); ?>
+		</form>
+	</div>
+
+	<!-- Merchant users list -->
+	<table class="wp-list-table widefat fixed striped">
+		<thead><tr>
+			<th><?php esc_html_e( 'User', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Merchant', 'remindmii' ); ?></th>
+			<th><?php esc_html_e( 'Actions', 'remindmii' ); ?></th>
+		</tr></thead>
+		<tbody>
+		<?php foreach ( (array) $m_users as $mu ) : ?>
+			<tr>
+				<td><?php echo esc_html( $mu->user_login . ' (' . $mu->user_email . ')' ); ?></td>
+				<td><?php echo esc_html( $mu->merchant_name ?? '' ); ?></td>
+				<td>
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+						<?php wp_nonce_field( 'remindmii_merchant_remove_user_' . $mu->id, 'remindmii_merchant_nonce' ); ?>
+						<input type="hidden" name="action" value="remindmii_merchant_remove_user" />
+						<input type="hidden" name="merchant_user_id" value="<?php echo absint( $mu->id ); ?>" />
+						<button type="submit" class="button button-small button-link-delete" onclick="return confirm('Remove?')"><?php esc_html_e( 'Remove', 'remindmii' ); ?></button>
+					</form>
+				</td>
+			</tr>
+		<?php endforeach; ?>
+		</tbody>
+	</table>
+	</div>
+	<?php
+}
+
+/** Handle create merchant POST. */
+public function handle_merchant_create() {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
+	check_admin_referer( 'remindmii_merchant_create', 'remindmii_merchant_nonce' );
+	global $wpdb;
+	$wpdb->insert(
+		$wpdb->prefix . 'remindmii_merchants',
+		array(
+			'name'        => sanitize_text_field( wp_unslash( (string) ( $_POST['merchant_name'] ?? '' ) ) ),
+			'category'    => sanitize_text_field( wp_unslash( (string) ( $_POST['merchant_category'] ?? '' ) ) ),
+			'logo_url'    => esc_url_raw( wp_unslash( (string) ( $_POST['merchant_logo_url'] ?? '' ) ) ),
+			'website_url' => esc_url_raw( wp_unslash( (string) ( $_POST['merchant_website_url'] ?? '' ) ) ),
+			'is_active'   => 1,
+		),
+		array( '%s', '%s', '%s', '%s', '%d' )
+	);
+	wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants', 'remindmii_notice' => 'Merchant+created.' ), admin_url( 'admin.php' ) ) );
+	exit;
+}
+
+/** Handle toggle merchant active. */
+public function handle_merchant_toggle() {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
+	$id = absint( $_POST['merchant_id'] ?? 0 );
+	check_admin_referer( 'remindmii_merchant_toggle_' . $id, 'remindmii_merchant_nonce' );
+	global $wpdb;
+	$current = (int) $wpdb->get_var( $wpdb->prepare( "SELECT is_active FROM {$wpdb->prefix}remindmii_merchants WHERE id=%d", $id ) );
+	$wpdb->update( $wpdb->prefix . 'remindmii_merchants', array( 'is_active' => $current ? 0 : 1 ), array( 'id' => $id ), array( '%d' ), array( '%d' ) );
+	wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants' ), admin_url( 'admin.php' ) ) );
+	exit;
+}
+
+/** Handle assign WP user to merchant. */
+public function handle_merchant_assign_user() {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
+	check_admin_referer( 'remindmii_merchant_assign_user', 'remindmii_merchant_nonce' );
+	global $wpdb;
+	$wpdb->replace(
+		$wpdb->prefix . 'remindmii_merchant_users',
+		array(
+			'merchant_id' => absint( $_POST['assign_merchant_id'] ?? 0 ),
+			'user_id'     => absint( $_POST['wp_user_id'] ?? 0 ),
+			'role'        => 'admin',
+		),
+		array( '%d', '%d', '%s' )
+	);
+	wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants', 'remindmii_notice' => 'User+assigned.' ), admin_url( 'admin.php' ) ) );
+	exit;
+}
+
+/** Handle remove user from merchant. */
+public function handle_merchant_remove_user() {
+	if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
+	$id = absint( $_POST['merchant_user_id'] ?? 0 );
+	check_admin_referer( 'remindmii_merchant_remove_user_' . $id, 'remindmii_merchant_nonce' );
+	global $wpdb;
+	$wpdb->delete( $wpdb->prefix . 'remindmii_merchant_users', array( 'id' => $id ), array( '%d' ) );
+	wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants' ), admin_url( 'admin.php' ) ) );
+	exit;
 }
 }

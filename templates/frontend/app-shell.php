@@ -230,6 +230,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<ul class="remindmii-reminders" data-remindmii-list hidden></ul>
 			<ul class="remindmii-categories" data-remindmii-categories hidden></ul>
 
+		<!-- Targeted ads -->
+		<div class="remindmii-ads-panel" data-remindmii-ads-panel hidden></div>
+
 		<!-- Preferences panel -->
 		<div class="remindmii-preferences-panel" data-remindmii-preferences-panel hidden>
 			<h3><?php echo esc_html__( 'Preferences', 'remindmii' ); ?></h3>
@@ -387,19 +390,29 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 				<form class="remindmii-item-form" data-remindmii-item-form hidden>
 					<input type="hidden" data-remindmii-item-editing-id value="" />
-					<label class="remindmii-field">
-						<span><?php echo esc_html__( 'Item title', 'remindmii' ); ?></span>
-						<input type="text" name="item_title" maxlength="191" required />
-					</label>
+				<div class="remindmii-field remindmii-field--with-action">
+					<span><?php echo esc_html__( 'Item title', 'remindmii' ); ?></span>
+					<div class="remindmii-field__input-row">
+						<input type="text" name="item_title" maxlength="191" required data-remindmii-item-title-input />
+						<button type="button" class="remindmii-ocr-trigger" data-remindmii-ocr-trigger data-remindmii-ocr-target="[data-remindmii-item-title-input]" title="<?php echo esc_attr__( 'Scan text (OCR)', 'remindmii' ); ?>" aria-label="<?php echo esc_attr__( 'Scan text', 'remindmii' ); ?>">
+							&#128251;
+						</button>
+					</div>
+				</div>
 					<label class="remindmii-field">
 						<span><?php echo esc_html__( 'Description (optional)', 'remindmii' ); ?></span>
 						<textarea name="item_description" rows="2"></textarea>
 					</label>
 					<div class="remindmii-field-group">
-						<label class="remindmii-field">
-							<span><?php echo esc_html__( 'URL (optional)', 'remindmii' ); ?></span>
-							<input type="url" name="item_url" maxlength="2083" />
-						</label>
+					<div class="remindmii-field remindmii-field--with-action">
+						<span><?php echo esc_html__( 'URL (optional)', 'remindmii' ); ?></span>
+						<div class="remindmii-field__input-row">
+							<input type="url" name="item_url" maxlength="2083" data-remindmii-item-url-input />
+							<button type="button" class="remindmii-barcode-trigger" data-remindmii-barcode-trigger data-remindmii-barcode-target="[data-remindmii-item-url-input]" title="<?php echo esc_attr__( 'Scan barcode / QR', 'remindmii' ); ?>" aria-label="<?php echo esc_attr__( 'Scan barcode', 'remindmii' ); ?>">
+								&#128247;
+							</button>
+						</div>
+					</div>
 						<label class="remindmii-field">
 							<span><?php echo esc_html__( 'Price (optional)', 'remindmii' ); ?></span>
 							<input type="number" name="item_price" min="0" step="0.01" />
@@ -497,6 +510,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<button type="button" class="remindmii-modal__close" data-remindmii-legal-close>&#x2715;</button>
 				</div>
 				<div class="remindmii-legal-content" data-remindmii-legal-content></div>
+			</div>
+		</div>
+
+
+		<!-- Barcode / QR scanner modal -->
+		<div class="remindmii-modal-overlay remindmii-barcode-modal" data-remindmii-barcode-modal hidden>
+			<div class="remindmii-modal">
+				<div class="remindmii-modal__header">
+					<h3>&#128247; <?php echo esc_html__( 'Scan Barcode / QR', 'remindmii' ); ?></h3>
+					<button type="button" class="remindmii-modal__close" data-remindmii-barcode-close>&#x2715;</button>
+				</div>
+				<div id="remindmii-barcode-reader" data-remindmii-barcode-reader class="remindmii-barcode-reader"></div>
+				<div class="remindmii-barcode-error" data-remindmii-barcode-error hidden></div>
+				<p class="remindmii-muted" style="text-align:center;margin-top:.75rem"><?php echo esc_html__( 'Point your camera at the barcode or QR code.', 'remindmii' ); ?></p>
+			</div>
+		</div>
+
+		<!-- OCR scanner modal -->
+		<div class="remindmii-modal-overlay remindmii-ocr-modal" data-remindmii-ocr-modal hidden>
+			<div class="remindmii-modal">
+				<div class="remindmii-modal__header">
+					<h3>&#128251; <?php echo esc_html__( 'Scan Text (OCR)', 'remindmii' ); ?></h3>
+					<button type="button" class="remindmii-modal__close" data-remindmii-ocr-close>&#x2715;</button>
+				</div>
+				<img class="remindmii-ocr-preview" data-remindmii-ocr-preview src="" alt="" hidden />
+				<div class="remindmii-ocr-progress" data-remindmii-ocr-progress hidden>
+					<div class="remindmii-ocr-progress__track">
+						<div class="remindmii-ocr-progress__bar" data-remindmii-ocr-progress-bar style="width:0%"></div>
+					</div>
+					<span class="remindmii-ocr-progress__label" data-remindmii-ocr-progress-label>0%</span>
+				</div>
+				<div class="remindmii-ocr-error" data-remindmii-ocr-error hidden></div>
+				<div class="remindmii-ocr-actions" data-remindmii-ocr-actions>
+					<p class="remindmii-muted" style="text-align:center"><?php echo esc_html__( 'Take a photo or upload an image to extract text automatically.', 'remindmii' ); ?></p>
+					<div class="remindmii-ocr-buttons">
+						<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-ocr-take-photo>
+							&#128247; <?php echo esc_html__( 'Take photo', 'remindmii' ); ?>
+						</button>
+						<button type="button" class="remindmii-button remindmii-button--secondary" data-remindmii-ocr-upload>
+							&#8679; <?php echo esc_html__( 'Upload image', 'remindmii' ); ?>
+						</button>
+					</div>
+				</div>
+				<input type="file" accept="image/*" capture="environment" data-remindmii-ocr-camera hidden />
+				<input type="file" accept="image/*" data-remindmii-ocr-file hidden />
 			</div>
 		</div>
 

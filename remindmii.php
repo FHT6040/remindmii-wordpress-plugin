@@ -46,6 +46,8 @@ require_once REMINDMII_PLUGIN_DIR . 'includes/repositories/class-wishlist-shares
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-wishlist-shares-controller.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-gamification.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-gamification-controller.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-merchants-controller.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-ads-controller.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/db/class-schema.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-plugin.php';

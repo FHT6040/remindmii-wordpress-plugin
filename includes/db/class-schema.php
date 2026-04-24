@@ -199,5 +199,60 @@ class Remindmii_DB_Schema {
 
 		dbDelta( $achievements_sql );
 		dbDelta( $user_stats_sql );
+
+		$merchants_table = $wpdb->prefix . 'remindmii_merchants';
+		$merchants_sql   = "CREATE TABLE {$merchants_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			name varchar(191) NOT NULL,
+			category varchar(100) DEFAULT NULL,
+			logo_url varchar(2083) DEFAULT NULL,
+			website_url varchar(2083) DEFAULT NULL,
+			is_active tinyint(1) NOT NULL DEFAULT 1,
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id)
+		) {$charset_collate};";
+
+		$merchant_users_table = $wpdb->prefix . 'remindmii_merchant_users';
+		$merchant_users_sql   = "CREATE TABLE {$merchant_users_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			merchant_id bigint(20) unsigned NOT NULL,
+			user_id bigint(20) unsigned NOT NULL,
+			role varchar(50) NOT NULL DEFAULT 'admin',
+			created_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY merchant_user (merchant_id, user_id),
+			KEY user_id (user_id)
+		) {$charset_collate};";
+
+		$merchant_ads_table = $wpdb->prefix . 'remindmii_merchant_ads';
+		$merchant_ads_sql   = "CREATE TABLE {$merchant_ads_table} (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			merchant_id bigint(20) unsigned NOT NULL,
+			title varchar(191) NOT NULL,
+			description longtext NULL,
+			image_url varchar(2083) DEFAULT NULL,
+			background_color varchar(20) NOT NULL DEFAULT '#3B82F6',
+			text_color varchar(20) NOT NULL DEFAULT '#FFFFFF',
+			target_gender longtext NULL,
+			target_age_min int(11) NOT NULL DEFAULT 0,
+			target_age_max int(11) NOT NULL DEFAULT 120,
+			target_categories longtext NULL,
+			cta_text varchar(100) NOT NULL DEFAULT 'Se tilbud',
+			cta_url varchar(2083) DEFAULT NULL,
+			is_active tinyint(1) NOT NULL DEFAULT 1,
+			start_date date DEFAULT NULL,
+			end_date date DEFAULT NULL,
+			impressions int(11) NOT NULL DEFAULT 0,
+			clicks int(11) NOT NULL DEFAULT 0,
+			created_at datetime NOT NULL,
+			updated_at datetime NOT NULL,
+			PRIMARY KEY  (id),
+			KEY merchant_id (merchant_id),
+			KEY is_active (is_active)
+		) {$charset_collate};";
+
+		dbDelta( $merchants_sql );
+		dbDelta( $merchant_users_sql );
+		dbDelta( $merchant_ads_sql );
 	}
 }

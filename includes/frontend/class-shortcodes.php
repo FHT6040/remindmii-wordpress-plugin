@@ -13,6 +13,7 @@ class Remindmii_Shortcodes {
 	public function register_hooks() {
 		add_shortcode( 'remindmii_app', array( $this, 'render_app' ) );
 		add_shortcode( 'remindmii_public_wishlist', array( $this, 'render_public_wishlist' ) );
+		add_shortcode( 'remindmii_merchant', array( $this, 'render_merchant' ) );
 	}
 
 	/**
@@ -39,6 +40,7 @@ class Remindmii_Shortcodes {
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
 				'siteLanguage' => substr( get_locale(), 0, 2 ),
+				'adsUrl'       => esc_url_raw( rest_url( 'remindmii/v1/ads' ) ),
 				'i18n'         => array(
 					'loading'          => __( 'Loading reminders...', 'remindmii' ),
 					'loadingProfile'   => __( 'Loading profile...', 'remindmii' ),
@@ -197,6 +199,12 @@ class Remindmii_Shortcodes {
 					'voiceStop'                 => __( 'Stop', 'remindmii' ),
 					'voiceError'                => __( 'Voice recognition error. Please try again.', 'remindmii' ),
 					'voicePermissionDenied'     => __( 'Microphone access denied. Please allow microphone access and try again.', 'remindmii' ),
+					// Barcode / OCR.
+					'barcodeModalTitle'          => __( 'Scan Barcode / QR', 'remindmii' ),
+					'ocrModalTitle'              => __( 'Scan Text (OCR)', 'remindmii' ),
+					'barcodeCameraError'         => __( 'Could not start camera. Check permissions and try again.', 'remindmii' ),
+					'ocrNoText'                  => __( 'No text found. Try a clearer photo.', 'remindmii' ),
+					'ocrProcessing'              => __( 'Processing image…', 'remindmii' ),
 					// Legal / Privacy.
 					'termsTitle'                => __( 'Terms and Conditions', 'remindmii' ),
 					'privacyTitle'              => __( 'Privacy Policy', 'remindmii' ),
@@ -252,6 +260,46 @@ class Remindmii_Shortcodes {
 
 		ob_start();
 		require REMINDMII_PLUGIN_DIR . 'templates/frontend/public-wishlist.php';
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Render the merchant portal.
+	 *
+	 * @return string
+	 */
+	public function render_merchant() {
+		wp_localize_script(
+			'remindmii-merchant',
+			'remindmiiMerchant',
+			array(
+				'restNonce'          => wp_create_nonce( 'wp_rest' ),
+				'isLoggedIn'         => is_user_logged_in(),
+				'loginUrl'           => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
+				'merchantProfileUrl' => esc_url_raw( rest_url( 'remindmii/v1/merchant/profile' ) ),
+				'merchantAdsUrl'     => esc_url_raw( rest_url( 'remindmii/v1/merchant/ads' ) ),
+				'i18n'               => array(
+					'newAd'         => __( 'New Ad', 'remindmii' ),
+					'editAd'        => __( 'Edit Ad', 'remindmii' ),
+					'noAds'         => __( 'No ads yet. Create your first ad.', 'remindmii' ),
+					'active'        => __( 'Active', 'remindmii' ),
+					'inactive'      => __( 'Inactive', 'remindmii' ),
+					'activate'      => __( 'Activate', 'remindmii' ),
+					'deactivate'    => __( 'Deactivate', 'remindmii' ),
+					'edit'          => __( 'Edit', 'remindmii' ),
+					'delete'        => __( 'Delete', 'remindmii' ),
+					'confirmDelete' => __( 'Delete this ad?', 'remindmii' ),
+					'saving'        => __( 'Saving\u2026', 'remindmii' ),
+					'saveFailed'    => __( 'Save failed. Please try again.', 'remindmii' ),
+				),
+			)
+		);
+
+		wp_enqueue_style( 'remindmii-frontend' );
+		wp_enqueue_script( 'remindmii-merchant' );
+
+		ob_start();
+		require REMINDMII_PLUGIN_DIR . 'templates/frontend/merchant-portal.php';
 		return (string) ob_get_clean();
 	}
 }

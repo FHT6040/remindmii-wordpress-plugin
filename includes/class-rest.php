@@ -69,6 +69,20 @@ class Remindmii_REST {
 	private $gamification_controller;
 
 	/**
+	 * Merchants controller instance.
+	 *
+	 * @var Remindmii_REST_Merchants_Controller
+	 */
+	private $merchants_controller;
+
+	/**
+	 * Ads controller instance.
+	 *
+	 * @var Remindmii_REST_Ads_Controller
+	 */
+	private $ads_controller;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -87,6 +101,8 @@ class Remindmii_REST {
 		$wishlists_repo                    = new Remindmii_Wishlists_Repository();
 		$this->wishlist_shares_controller = new Remindmii_REST_Wishlist_Shares_Controller( new Remindmii_Wishlist_Shares_Repository(), $wishlists_repo );
 		$this->gamification_controller   = new Remindmii_REST_Gamification_Controller();
+		$this->merchants_controller      = new Remindmii_REST_Merchants_Controller();
+		$this->ads_controller            = new Remindmii_REST_Ads_Controller();
 	}
 
 	/**
@@ -113,6 +129,8 @@ class Remindmii_REST {
 		$this->preferences_controller->register_routes();
 		$this->wishlist_shares_controller->register_routes();
 		$this->gamification_controller->register_routes();
+		$this->merchants_controller->register_routes();
+		$this->ads_controller->register_routes();
 
 		register_rest_route(
 			'remindmii/v1',
