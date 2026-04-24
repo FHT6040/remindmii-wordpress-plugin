@@ -122,10 +122,14 @@ class Remindmii_Reminders_Repository {
 				'recurrence_interval' => $data['recurrence_interval'],
 				'notification_sent'   => 0,
 				'is_completed'        => $data['is_completed'],
+				'location_name'       => isset( $data['location_name'] ) ? $data['location_name'] : null,
+				'location_lat'        => isset( $data['location_lat'] )  ? $data['location_lat']  : null,
+				'location_lng'        => isset( $data['location_lng'] )  ? $data['location_lng']  : null,
+				'location_radius'     => isset( $data['location_radius'] ) ? (int) $data['location_radius'] : 200,
 				'created_at'          => $timestamp,
 				'updated_at'          => $timestamp,
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%f', '%f', '%d', '%s', '%s' )
 		);
 
 		if ( false === $inserted ) {
@@ -162,13 +166,17 @@ class Remindmii_Reminders_Repository {
 				'is_recurring'        => $data['is_recurring'],
 				'recurrence_interval' => $data['recurrence_interval'],
 				'is_completed'        => $data['is_completed'],
+				'location_name'       => isset( $data['location_name'] ) ? $data['location_name'] : null,
+				'location_lat'        => isset( $data['location_lat'] )  ? $data['location_lat']  : null,
+				'location_lng'        => isset( $data['location_lng'] )  ? $data['location_lng']  : null,
+				'location_radius'     => isset( $data['location_radius'] ) ? (int) $data['location_radius'] : 200,
 				'updated_at'          => current_time( 'mysql' ),
 			),
 			array(
 				'id'      => absint( $reminder_id ),
 				'user_id' => absint( $user_id ),
 			),
-			array( '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%f', '%f', '%d', '%s' ),
 			array( '%d', '%d' )
 		);
 

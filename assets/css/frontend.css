@@ -227,12 +227,19 @@
 }
 
 .remindmii-button--danger {
-	border-color: #dc2626;
-	background: #dc2626;
-	color: #ffffff;
+	border-color: #fca5a5;
+	background: #fee2e2;
+	color: #991b1b;
+}
+
+.remindmii-button--danger:hover {
+	background: #fca5a5;
 }
 
 .remindmii-button--small {
+	padding: 0.2rem 0.6rem;
+	font-size: 0.8rem;
+}
 	padding: 6px 10px;
 	font-size: 0.875rem;
 }
@@ -443,16 +450,6 @@
 .remindmii-wishlist-share a {
 	word-break: break-all;
 	color: #2563eb;
-}
-
-.remindmii-button--danger {
-	background: #fee2e2;
-	color: #991b1b;
-	border-color: #fca5a5;
-}
-
-.remindmii-button--danger:hover {
-	background: #fca5a5;
 }
 
 /* ==========================================================================
@@ -747,15 +744,9 @@
 	font-size: 0.75rem;
 }
 
-.remindmii-button--danger {
-	background: #fee2e2;
-	color: #dc2626;
-	border: 1px solid #fca5a5;
-}
-
-.remindmii-button--danger:hover { background: #fca5a5; }
-
 .remindmii-button--sm { padding: 0.2rem 0.6rem; font-size: 0.8rem; }
+
+.remindmii-muted { color: #64748b; font-size: 0.875rem; margin: 0 0 0.5rem; }
 
 /* ==========================================================================
    Gamification
