@@ -1913,4 +1913,157 @@ document.addEventListener('DOMContentLoaded', function () {
 		});
 	})();
 
+	// ------------------------------------------------------------------ //
+	// Language Selector
+	// ------------------------------------------------------------------ //
+	(function initLanguageSelector() {
+		var LANG_KEY = 'remindmii_language';
+		var trigger  = root.querySelector('[data-remindmii-lang-trigger]');
+		var dropdown = root.querySelector('[data-remindmii-lang-dropdown]');
+		var label    = root.querySelector('[data-remindmii-lang-label]');
+
+		if ( ! trigger || ! dropdown ) { return; }
+
+		var langNames = { en: 'EN', da: 'DA', sv: 'SV', no: 'NO', de: 'DE' };
+
+		// Restore saved language on load
+		var saved = localStorage.getItem( LANG_KEY );
+		if ( saved && langNames[ saved ] ) {
+			label.textContent = langNames[ saved ].toUpperCase();
+			document.documentElement.lang = saved;
+		}
+
+		trigger.addEventListener( 'click', function (e) {
+			e.stopPropagation();
+			var open = dropdown.hidden === false;
+			dropdown.hidden = open;
+			trigger.setAttribute( 'aria-expanded', String( ! open ) );
+		} );
+
+		dropdown.addEventListener( 'click', function (e) {
+			var btn = e.target.closest( '[data-lang]' );
+			if ( ! btn ) { return; }
+			var lang = btn.getAttribute( 'data-lang' );
+			localStorage.setItem( LANG_KEY, lang );
+			label.textContent = langNames[ lang ] || lang.toUpperCase();
+			document.documentElement.lang = lang;
+			dropdown.hidden = true;
+			trigger.setAttribute( 'aria-expanded', 'false' );
+		} );
+
+		document.addEventListener( 'click', function (e) {
+			if ( ! root.querySelector('[data-remindmii-lang-selector]').contains( e.target ) ) {
+				dropdown.hidden = true;
+				trigger.setAttribute( 'aria-expanded', 'false' );
+			}
+		} );
+	})();
+
+	// ------------------------------------------------------------------ //
+	// Cookie Consent Banner
+	// ------------------------------------------------------------------ //
+	(function initCookieBanner() {
+		var CONSENT_KEY = 'remindmii_cookie_consent';
+		var banner      = root.querySelector('[data-remindmii-cookie-banner]');
+		if ( ! banner ) { return; }
+
+		var stored = null;
+		try { stored = JSON.parse( localStorage.getItem( CONSENT_KEY ) || 'null' ); } catch(e) {}
+
+		if ( ! stored ) {
+			banner.removeAttribute('hidden');
+			banner.hidden = false;
+		}
+
+		function accept( choice ) {
+			try {
+				localStorage.setItem( CONSENT_KEY, JSON.stringify( { choice: choice, date: new Date().toISOString() } ) );
+			} catch(e) {}
+			banner.hidden = true;
+		}
+
+		var btnNecessary = banner.querySelectorAll('[data-remindmii-cookie-necessary]');
+		var btnAll       = banner.querySelector('[data-remindmii-cookie-all]');
+
+		btnNecessary.forEach( function(btn) {
+			btn.addEventListener( 'click', function() { accept('necessary'); } );
+		} );
+		if ( btnAll ) {
+			btnAll.addEventListener( 'click', function() { accept('all'); } );
+		}
+	})();
+
+	// ------------------------------------------------------------------ //
+	// Legal / Privacy Modal
+	// ------------------------------------------------------------------ //
+	(function initLegalModal() {
+		var legalModal   = root.querySelector('[data-remindmii-legal-modal]');
+		var legalContent = root.querySelector('[data-remindmii-legal-content]');
+		var legalClose   = root.querySelector('[data-remindmii-legal-close]');
+		var legalTabs    = root.querySelectorAll('[data-remindmii-legal-tab]');
+		var triggers     = root.querySelectorAll('[data-remindmii-legal-trigger]');
+
+		if ( ! legalModal || ! legalContent ) { return; }
+
+		var i18n        = (config && config.i18n) ? config.i18n : {};
+		var activeTab   = 'terms';
+
+		var content = {
+			terms: {
+				title : i18n.termsTitle   || 'Terms and Conditions',
+				body  : i18n.termsContent || '',
+				updated: i18n.legalLastUpdated || '',
+			},
+			privacy: {
+				title : i18n.privacyTitle   || 'Privacy Policy',
+				body  : i18n.privacyContent || '',
+				updated: i18n.legalLastUpdated || '',
+			},
+		};
+
+		function renderTab( tab ) {
+			activeTab = tab;
+			var doc = content[ tab ];
+			legalContent.innerHTML =
+				'<h2 class="remindmii-legal-doc__title">' + esc( doc.title ) + '</h2>' +
+				( doc.updated ? '<p class="remindmii-legal-doc__updated">' + esc( doc.updated ) + '</p>' : '' ) +
+				'<p class="remindmii-legal-doc__body">' + esc( doc.body ) + '</p>';
+
+			legalTabs.forEach( function(btn) {
+				btn.classList.toggle( 'is-active', btn.getAttribute('data-remindmii-legal-tab') === tab );
+			} );
+		}
+
+		function openModal( tab ) {
+			renderTab( tab || activeTab );
+			legalModal.removeAttribute('hidden');
+			legalModal.hidden = false;
+		}
+
+		function closeModal() {
+			legalModal.hidden = true;
+		}
+
+		triggers.forEach( function(el) {
+			el.addEventListener( 'click', function() {
+				var tab = el.getAttribute('data-remindmii-legal-open-tab') || 'terms';
+				openModal( tab );
+			} );
+		} );
+
+		legalTabs.forEach( function(btn) {
+			btn.addEventListener( 'click', function() {
+				renderTab( btn.getAttribute('data-remindmii-legal-tab') );
+			} );
+		} );
+
+		if ( legalClose ) {
+			legalClose.addEventListener( 'click', closeModal );
+		}
+
+		legalModal.addEventListener( 'click', function(e) {
+			if ( e.target === legalModal ) { closeModal(); }
+		} );
+	})();
+
 });

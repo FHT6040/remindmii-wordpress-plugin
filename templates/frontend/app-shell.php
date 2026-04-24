@@ -5,7 +5,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 <div class="remindmii-app-shell" data-remindmii-app>
 	<div class="remindmii-app-shell__header">
-		<h2><?php echo esc_html__( 'Remindmii', 'remindmii' ); ?></h2>
+		<div class="remindmii-app-shell__title-row">
+			<h2><?php echo esc_html__( 'Remindmii', 'remindmii' ); ?></h2>
+			<div class="remindmii-header-actions">
+				<div class="remindmii-lang-selector" data-remindmii-lang-selector>
+					<button type="button" class="remindmii-lang-selector__trigger" data-remindmii-lang-trigger aria-haspopup="listbox" aria-expanded="false">
+						&#127760; <span data-remindmii-lang-label><?php echo esc_html( strtoupper( substr( get_locale(), 0, 2 ) ) ); ?></span>
+					</button>
+					<ul class="remindmii-lang-selector__dropdown" data-remindmii-lang-dropdown role="listbox" hidden>
+						<li><button type="button" data-lang="en" role="option">&#127482;&#127480; English</button></li>
+						<li><button type="button" data-lang="da" role="option">&#127465;&#127472; Dansk</button></li>
+						<li><button type="button" data-lang="sv" role="option">&#127480;&#127466; Svenska</button></li>
+						<li><button type="button" data-lang="no" role="option">&#127475;&#127476; Norsk</button></li>
+						<li><button type="button" data-lang="de" role="option">&#127465;&#127466; Deutsch</button></li>
+					</ul>
+				</div>
+				<button type="button" class="remindmii-legal-trigger" data-remindmii-legal-trigger title="<?php echo esc_attr__( 'Legal &amp; Privacy', 'remindmii' ); ?>" aria-label="<?php echo esc_attr__( 'Legal and Privacy', 'remindmii' ); ?>">
+					&#128220;
+				</button>
+			</div>
+		</div>
 		<p class="remindmii-app-shell__intro"><?php echo esc_html__( 'Create and manage your reminders directly from WordPress.', 'remindmii' ); ?></p>
 	</div>
 	<div class="remindmii-app-shell__body">
@@ -464,6 +483,47 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 				<div class="remindmii-templates-filter" data-remindmii-templates-filter></div>
 				<ul class="remindmii-templates-list" data-remindmii-templates-list></ul>
+			</div>
+		</div>
+
+		<!-- Legal / Privacy modal -->
+		<div class="remindmii-modal-overlay remindmii-legal-modal" data-remindmii-legal-modal hidden>
+			<div class="remindmii-modal remindmii-legal-modal__inner">
+				<div class="remindmii-modal__header">
+					<div class="remindmii-legal-tabs">
+						<button type="button" class="remindmii-legal-tab is-active" data-remindmii-legal-tab="terms"><?php echo esc_html__( 'Terms', 'remindmii' ); ?></button>
+						<button type="button" class="remindmii-legal-tab" data-remindmii-legal-tab="privacy"><?php echo esc_html__( 'Privacy Policy', 'remindmii' ); ?></button>
+					</div>
+					<button type="button" class="remindmii-modal__close" data-remindmii-legal-close>&#x2715;</button>
+				</div>
+				<div class="remindmii-legal-content" data-remindmii-legal-content></div>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Cookie banner (outside app body so it overlays everything) -->
+	<div class="remindmii-cookie-banner" data-remindmii-cookie-banner hidden>
+		<div class="remindmii-cookie-banner__inner">
+			<div class="remindmii-cookie-banner__top">
+				<span>&#127850;</span>
+				<div>
+					<p class="remindmii-cookie-banner__title"><?php echo esc_html__( 'We use cookies', 'remindmii' ); ?></p>
+					<p class="remindmii-cookie-banner__desc"><?php echo esc_html__( 'Remindmii uses necessary cookies to keep you logged in and remember your settings. With your consent we also use analytical cookies to improve the service.', 'remindmii' ); ?></p>
+				</div>
+				<button type="button" class="remindmii-cookie-banner__dismiss" data-remindmii-cookie-necessary aria-label="<?php echo esc_attr__( 'Accept necessary only', 'remindmii' ); ?>">&#x2715;</button>
+			</div>
+			<details class="remindmii-cookie-banner__details">
+				<summary><?php echo esc_html__( 'Show details', 'remindmii' ); ?></summary>
+				<div class="remindmii-cookie-banner__detail-body">
+					<p><strong><?php echo esc_html__( 'Necessary cookies (always active)', 'remindmii' ); ?></strong><br><?php echo esc_html__( 'Used for login session, language selection and app settings. Cannot be disabled.', 'remindmii' ); ?></p>
+					<p><strong><?php echo esc_html__( 'Analytical cookies (optional)', 'remindmii' ); ?></strong><br><?php echo esc_html__( 'Helps us understand how the app is used so we can improve it. No personal data is shared with third parties.', 'remindmii' ); ?></p>
+					<p><button type="button" class="remindmii-link" data-remindmii-legal-trigger data-remindmii-legal-open-tab="privacy"><?php echo esc_html__( 'Read our privacy policy', 'remindmii' ); ?></button></p>
+				</div>
+			</details>
+			<div class="remindmii-cookie-banner__buttons">
+				<button type="button" class="remindmii-button" data-remindmii-cookie-necessary><?php echo esc_html__( 'Necessary only', 'remindmii' ); ?></button>
+				<button type="button" class="remindmii-button remindmii-button--primary" data-remindmii-cookie-all><?php echo esc_html__( 'Accept all', 'remindmii' ); ?></button>
 			</div>
 		</div>
 	</div>

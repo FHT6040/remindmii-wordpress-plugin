@@ -38,6 +38,7 @@ class Remindmii_Shortcodes {
 				'restNonce'    => wp_create_nonce( 'wp_rest' ),
 				'isLoggedIn'   => is_user_logged_in(),
 				'loginUrl'     => esc_url_raw( wp_login_url( get_permalink() ?: home_url( '/' ) ) ),
+				'siteLanguage' => substr( get_locale(), 0, 2 ),
 				'i18n'         => array(
 					'loading'          => __( 'Loading reminders...', 'remindmii' ),
 					'loadingProfile'   => __( 'Loading profile...', 'remindmii' ),
@@ -196,6 +197,12 @@ class Remindmii_Shortcodes {
 					'voiceStop'                 => __( 'Stop', 'remindmii' ),
 					'voiceError'                => __( 'Voice recognition error. Please try again.', 'remindmii' ),
 					'voicePermissionDenied'     => __( 'Microphone access denied. Please allow microphone access and try again.', 'remindmii' ),
+					// Legal / Privacy.
+					'termsTitle'                => __( 'Terms and Conditions', 'remindmii' ),
+					'privacyTitle'              => __( 'Privacy Policy', 'remindmii' ),
+					'legalLastUpdated'          => __( 'Last updated: 8 March 2026', 'remindmii' ),
+					'termsContent'              => __( 'By creating an account and using Remindmii, you agree to be bound by these terms. Remindmii is a reminder service that helps you track important dates, tasks, and gift cards. You are responsible for keeping your login credentials confidential. We comply with GDPR regulations — your data is stored securely and you can request deletion at any time. The service is provided "as is" without warranties of any kind.', 'remindmii' ),
+					'privacyContent'            => __( 'Remindmii collects your name, email address, and reminder data to provide the service. We use necessary cookies for login sessions and settings. With your consent, we use analytical cookies to improve the service. We never share your personal data with third parties without your consent. You have the right to access, correct, and delete your data at any time by contacting support@remindmii.com.', 'remindmii' ),
 				),
 			)
 		);
