@@ -849,3 +849,121 @@
 }
 
 .remindmii-location-fields { margin-top: 0.75rem; }
+/* ------------------------------------------------------------------ */
+/* Voice Input                                                          */
+/* ------------------------------------------------------------------ */
+
+/* Title field with inline mic button */
+.remindmii-field--with-action .remindmii-field__input-row {
+display: flex;
+gap: 0.5rem;
+align-items: stretch;
+}
+
+.remindmii-field--with-action .remindmii-field__input-row input {
+flex: 1 1 0%;
+min-width: 0;
+}
+
+.remindmii-voice-trigger {
+flex: 0 0 auto;
+background: #f1f5f9;
+border: 1px solid #cbd5e1;
+border-radius: 0.5rem;
+padding: 0 0.75rem;
+font-size: 1.125rem;
+cursor: pointer;
+transition: background 0.15s, border-color 0.15s;
+line-height: 1;
+}
+
+.remindmii-voice-trigger:hover {
+background: #e2e8f0;
+border-color: #94a3b8;
+}
+
+/* Voice modal */
+.remindmii-voice-modal__inner {
+max-width: 520px;
+}
+
+.remindmii-voice-modal__hint {
+font-size: 0.875rem;
+color: #64748b;
+margin: 0 0 1rem;
+}
+
+.remindmii-voice-transcript {
+background: #f8fafc;
+border: 2px dashed #cbd5e1;
+border-radius: 0.75rem;
+min-height: 100px;
+padding: 1rem;
+font-size: 1rem;
+color: #1e293b;
+margin-bottom: 1rem;
+word-break: break-word;
+transition: border-color 0.2s;
+}
+
+.remindmii-voice-transcript__interim {
+color: #94a3b8;
+}
+
+.remindmii-voice-transcript__cursor {
+animation: remindmii-blink 0.8s step-start infinite;
+color: #6366f1;
+font-weight: bold;
+}
+
+@keyframes remindmii-blink {
+50% { opacity: 0; }
+}
+
+.remindmii-voice-error {
+background: #fef2f2;
+border: 1px solid #fecaca;
+border-radius: 0.5rem;
+padding: 0.75rem 1rem;
+color: #b91c1c;
+font-size: 0.875rem;
+margin-bottom: 1rem;
+}
+
+.remindmii-voice-actions {
+display: flex;
+align-items: center;
+gap: 1rem;
+}
+
+/* Mic button */
+.remindmii-voice-mic {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+background: #f1f5f9;
+border: 2px solid #cbd5e1;
+border-radius: 9999px;
+padding: 0.5rem 1.25rem;
+font-size: 1rem;
+font-weight: 600;
+cursor: pointer;
+transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.remindmii-voice-mic:hover {
+background: #e2e8f0;
+}
+
+.remindmii-voice-mic.is-listening {
+background: #fef2f2;
+border-color: #f87171;
+color: #b91c1c;
+animation: remindmii-pulse-ring 1.2s ease-out infinite;
+}
+
+@keyframes remindmii-pulse-ring {
+0%   { box-shadow: 0 0 0 0 rgba(239,68,68,.4); }
+70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}

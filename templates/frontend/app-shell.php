@@ -117,10 +117,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</button>
 			</div>
 			<div class="remindmii-field-group">
-				<label class="remindmii-field">
+				<div class="remindmii-field remindmii-field--with-action">
 					<span><?php echo esc_html__( 'Title', 'remindmii' ); ?></span>
-					<input type="text" name="title" maxlength="191" required />
-				</label>
+					<div class="remindmii-field__input-row">
+						<input type="text" name="title" maxlength="191" required />
+						<button type="button" class="remindmii-voice-trigger" data-remindmii-voice-trigger title="<?php echo esc_attr__( 'Voice input', 'remindmii' ); ?>" aria-label="<?php echo esc_attr__( 'Voice input', 'remindmii' ); ?>">
+							&#127908;
+						</button>
+					</div>
+				</div>
 				<label class="remindmii-field">
 					<span><?php echo esc_html__( 'Category', 'remindmii' ); ?></span>
 					<select name="category_id" data-remindmii-category-select>
@@ -428,6 +433,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 				</div>
 			</div>
 		</div>
+		<!-- Voice input modal -->
+		<div class="remindmii-modal-overlay remindmii-voice-modal" data-remindmii-voice-modal hidden>
+			<div class="remindmii-modal remindmii-voice-modal__inner">
+				<div class="remindmii-modal__header">
+					<h3>&#127908; <?php echo esc_html__( 'Voice Input', 'remindmii' ); ?></h3>
+					<button type="button" class="remindmii-modal__close" data-remindmii-voice-close>&#x2715;</button>
+				</div>
+				<p class="remindmii-voice-modal__hint" data-remindmii-voice-hint><?php echo esc_html__( 'Press the microphone to start speaking.', 'remindmii' ); ?></p>
+				<div class="remindmii-voice-transcript" data-remindmii-voice-transcript aria-live="polite"></div>
+				<div class="remindmii-voice-error" data-remindmii-voice-error hidden></div>
+				<div class="remindmii-voice-actions">
+					<button type="button" class="remindmii-voice-mic" data-remindmii-voice-mic aria-pressed="false">
+						<span class="remindmii-voice-mic__icon" data-remindmii-voice-mic-icon>&#127908;</span>
+						<span data-remindmii-voice-mic-label><?php echo esc_html__( 'Start', 'remindmii' ); ?></span>
+					</button>
+					<button type="button" class="remindmii-button remindmii-button--primary" data-remindmii-voice-use disabled>
+						<?php echo esc_html__( 'Use text', 'remindmii' ); ?>
+					</button>
+				</div>
+			</div>
+		</div>
+
 		<!-- Template picker modal -->
 		<div class="remindmii-modal-overlay" data-remindmii-templates-modal hidden>
 			<div class="remindmii-modal">

@@ -1782,4 +1782,135 @@ document.addEventListener('DOMContentLoaded', function () {
 			.replace(/'/g, '&#039;');
 	}
 
+	// ------------------------------------------------------------------ //
+	// Voice Input (Web Speech API)
+	// ------------------------------------------------------------------ //
+	(function initVoiceInput() {
+		var voiceTrigger    = root.querySelector('[data-remindmii-voice-trigger]');
+		var voiceModal      = root.querySelector('[data-remindmii-voice-modal]');
+		var voiceClose      = root.querySelector('[data-remindmii-voice-close]');
+		var voiceMic        = root.querySelector('[data-remindmii-voice-mic]');
+		var voiceMicIcon    = root.querySelector('[data-remindmii-voice-mic-icon]');
+		var voiceMicLabel   = root.querySelector('[data-remindmii-voice-mic-label]');
+		var voiceTranscript = root.querySelector('[data-remindmii-voice-transcript]');
+		var voiceError      = root.querySelector('[data-remindmii-voice-error]');
+		var voiceUse        = root.querySelector('[data-remindmii-voice-use]');
+		var titleInput      = root.querySelector('input[name="title"]');
+
+		if ( ! voiceTrigger || ! voiceModal ) { return; }
+
+		var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+		if ( ! SpeechRecognition ) {
+			// Hide mic button if API unavailable
+			voiceTrigger.hidden = true;
+			return;
+		}
+
+		var recognition     = new SpeechRecognition();
+		var finalText       = '';
+		var listening       = false;
+
+		recognition.continuous     = true;
+		recognition.interimResults = true;
+		recognition.lang           = (navigator.language || 'en-US');
+
+		recognition.onresult = function (event) {
+			var interim = '';
+			finalText = '';
+			for (var i = 0; i < event.results.length; i++) {
+				if (event.results[i].isFinal) {
+					finalText += event.results[i][0].transcript + ' ';
+				} else {
+					interim += event.results[i][0].transcript;
+				}
+			}
+			voiceTranscript.innerHTML =
+				esc(finalText) +
+				'<span class="remindmii-voice-transcript__interim">' + esc(interim) + '</span>' +
+				(listening ? '<span class="remindmii-voice-transcript__cursor">|</span>' : '');
+			voiceUse.disabled = (finalText.trim() === '');
+		};
+
+		recognition.onerror = function (event) {
+			var msg = config.i18n && config.i18n.voiceError
+				? config.i18n.voiceError
+				: 'Voice recognition error. Please try again.';
+			if ( event.error === 'not-allowed' ) {
+				msg = config.i18n && config.i18n.voicePermissionDenied
+					? config.i18n.voicePermissionDenied
+					: 'Microphone access denied. Please allow microphone access and try again.';
+			}
+			voiceError.textContent = msg;
+			voiceError.hidden = false;
+			setListening(false);
+		};
+
+		recognition.onend = function () {
+			setListening(false);
+		};
+
+		function setListening(active) {
+			listening = active;
+			voiceMic.setAttribute('aria-pressed', active ? 'true' : 'false');
+			voiceMic.classList.toggle('is-listening', active);
+			voiceMicIcon.textContent  = active ? '\uD83D\uDCE3' : '\uD83C\uDFA4'; // 📣 / 🎤
+			voiceMicLabel.textContent = active
+				? (config.i18n && config.i18n.voiceStop  ? config.i18n.voiceStop  : 'Stop')
+				: (config.i18n && config.i18n.voiceStart ? config.i18n.voiceStart : 'Start');
+		}
+
+		function openVoiceModal() {
+			finalText = '';
+			voiceTranscript.innerHTML = '';
+			voiceError.hidden   = true;
+			voiceError.textContent = '';
+			voiceUse.disabled   = true;
+			setListening(false);
+			voiceModal.hidden   = false;
+			voiceModal.removeAttribute('hidden');
+		}
+
+		function closeVoiceModal() {
+			if (listening) { try { recognition.stop(); } catch(e) {} }
+			setListening(false);
+			voiceModal.hidden = true;
+		}
+
+		voiceTrigger.addEventListener('click', openVoiceModal);
+		voiceClose.addEventListener('click', closeVoiceModal);
+		voiceModal.addEventListener('click', function (e) {
+			if (e.target === voiceModal) { closeVoiceModal(); }
+		});
+
+		voiceMic.addEventListener('click', function () {
+			if (listening) {
+				try { recognition.stop(); } catch(e) {}
+				setListening(false);
+			} else {
+				voiceError.hidden = true;
+				finalText = '';
+				voiceTranscript.innerHTML = '';
+				voiceUse.disabled = true;
+				try {
+					recognition.start();
+					setListening(true);
+				} catch (e) {
+					voiceError.textContent = config.i18n && config.i18n.voiceError
+						? config.i18n.voiceError : 'Could not start voice recognition.';
+					voiceError.hidden = false;
+				}
+			}
+		});
+
+		voiceUse.addEventListener('click', function () {
+			var text = finalText.trim();
+			if (text && titleInput) {
+				titleInput.value = text;
+				// Dispatch input event so any listeners know the value changed
+				titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+			}
+			closeVoiceModal();
+		});
+	})();
+
 });

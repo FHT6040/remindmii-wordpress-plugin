@@ -191,6 +191,11 @@ class Remindmii_Shortcodes {
 					'nearLocation'              => __( 'You are near', 'remindmii' ),
 					'geolocationUnsupported'    => __( 'Geolocation is not supported by this browser.', 'remindmii' ),
 					'geolocationError'          => __( 'Could not determine your location.', 'remindmii' ),
+					// Voice input.
+					'voiceStart'                => __( 'Start', 'remindmii' ),
+					'voiceStop'                 => __( 'Stop', 'remindmii' ),
+					'voiceError'                => __( 'Voice recognition error. Please try again.', 'remindmii' ),
+					'voicePermissionDenied'     => __( 'Microphone access denied. Please allow microphone access and try again.', 'remindmii' ),
 				),
 			)
 		);
