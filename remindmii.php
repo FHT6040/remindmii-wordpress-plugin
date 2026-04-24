@@ -48,6 +48,8 @@ require_once REMINDMII_PLUGIN_DIR . 'includes/class-gamification.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-gamification-controller.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-merchants-controller.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-ads-controller.php';
+
+require_once REMINDMII_PLUGIN_DIR . 'includes/cli/class-cli-commands.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/db/class-schema.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-plugin.php';
@@ -58,6 +60,7 @@ register_deactivation_hook( __FILE__, array( 'Remindmii_Deactivator', 'deactivat
 function remindmii_run_plugin() {
 	$plugin = new Remindmii_Plugin();
 	$plugin->run();
+	Remindmii_CLI_Commands::register();
 }
 
 remindmii_run_plugin();

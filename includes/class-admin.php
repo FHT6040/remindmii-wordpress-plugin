@@ -27,6 +27,7 @@ class Remindmii_Admin {
 		add_action( 'admin_post_remindmii_merchant_toggle',      array( $this, 'handle_merchant_toggle' ) );
 		add_action( 'admin_post_remindmii_merchant_assign_user', array( $this, 'handle_merchant_assign_user' ) );
 		add_action( 'admin_post_remindmii_merchant_remove_user', array( $this, 'handle_merchant_remove_user' ) );
+			add_action( 'admin_post_remindmii_generate_test_data', array( $this, 'handle_generate_test_data' ) );
 	}
 
 	/**
@@ -570,6 +571,25 @@ private function render_tab_logs( $filters, $logs ) {
  * Render the Settings tab.
  */
 private function render_tab_settings() {
+	// Check if required tables exist.
+	global $wpdb;
+	$critical_tables = array(
+		$wpdb->prefix . 'remindmii_reminders',
+		$wpdb->prefix . 'remindmii_merchants',
+	);
+	$missing = array();
+	foreach ( $critical_tables as $table ) {
+		if ( ! $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ) ) {
+			$missing[] = $table;
+		}
+	}
+
+<?php if ( ! empty( $missing ) ) : ?>
+	<div class="notice notice-error is-dismissible"><p>
+		<?php esc_html_e( 'Database schema issue: the following tables are missing. Deactivate and reactivate the plugin to recreate them.', 'remindmii' ); ?>
+		<br /><code><?php echo esc_html( implode( ', ', $missing ) ); ?></code>
+	</p></div>
+<?php endif; ?>
 ?>
 <div class="remindmii-admin-page">
 <h2 style="margin-top:0"><?php esc_html_e( 'Settings', 'remindmii' ); ?></h2>
@@ -732,6 +752,13 @@ private function render_tab_merchants() {
 
 	<h2><?php esc_html_e( 'Merchants', 'remindmii' ); ?></h2>
 
+	<!-- Generate test data button -->
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-bottom:24px">
+		<?php wp_nonce_field( 'remindmii_generate_test_data', 'remindmii_nonce' ); ?>
+		<input type="hidden" name="action" value="remindmii_generate_test_data" />
+		<button type="submit" class="button button-secondary" onclick="return confirm('Create test merchant and ads?');"><?php esc_html_e( 'Generate Test Data', 'remindmii' ); ?></button>
+	</form>
+
 	<!-- Create merchant form -->
 	<div class="remindmii-admin-card" style="max-width:600px;margin-bottom:24px">
 		<h3><?php esc_html_e( 'Add Merchant', 'remindmii' ); ?></h3>
@@ -854,6 +881,65 @@ public function handle_merchant_toggle() {
 	$current = (int) $wpdb->get_var( $wpdb->prepare( "SELECT is_active FROM {$wpdb->prefix}remindmii_merchants WHERE id=%d", $id ) );
 	$wpdb->update( $wpdb->prefix . 'remindmii_merchants', array( 'is_active' => $current ? 0 : 1 ), array( 'id' => $id ), array( '%d' ), array( '%d' ) );
 	wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants' ), admin_url( 'admin.php' ) ) );
+
+	/** Generate test data for development. */
+	public function handle_generate_test_data() {
+		if ( ! current_user_can( 'manage_options' ) ) { wp_die( 'Forbidden', 403 ); }
+		check_admin_referer( 'remindmii_generate_test_data', 'remindmii_nonce' );
+
+		global $wpdb;
+		$admin_users = get_users( array( 'role' => 'administrator', 'number' => 1 ) );
+		if ( empty( $admin_users ) ) { wp_die( 'No admin user found.' ); }
+		$admin_id = $admin_users[0]->ID;
+
+		// Create test merchant.
+		$merchant_data = array(
+			'name'        => 'Test Merchant ' . gmdate( 'Y-m-d H:i:s' ),
+			'category'    => 'Testing',
+			'logo_url'    => 'https://via.placeholder.com/64?text=Test',
+			'website_url' => 'https://example.com',
+			'is_active'   => 1,
+		);
+		$wpdb->insert( $wpdb->prefix . 'remindmii_merchants', $merchant_data, array( '%s', '%s', '%s', '%s', '%d' ) );
+		$merchant_id = (int) $wpdb->insert_id;
+
+		// Assign to admin.
+		$wpdb->replace(
+			$wpdb->prefix . 'remindmii_merchant_users',
+			array( 'merchant_id' => $merchant_id, 'user_id' => $admin_id, 'role' => 'admin' ),
+			array( '%d', '%d', '%s' )
+		);
+
+		// Create 3 test ads.
+		$now = current_time( 'mysql' );
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$wpdb->insert(
+				$wpdb->prefix . 'remindmii_merchant_ads',
+				array(
+					'merchant_id'       => $merchant_id,
+					'title'             => "Test Ad #{$i}",
+					'description'       => "This is test ad number {$i}.",
+					'image_url'         => "https://via.placeholder.com/400x200?text=Ad+{$i}",
+					'background_color'  => array( '#3B82F6', '#10B981', '#F59E0B' )[ $i - 1 ] ?? '#3B82F6',
+					'text_color'        => '#FFFFFF',
+					'target_gender'     => wp_json_encode( array( 'all' ) ),
+					'target_age_min'    => 18,
+					'target_age_max'    => 65,
+					'target_categories' => wp_json_encode( array( 'all' ) ),
+					'cta_text'          => 'Learn More',
+					'cta_url'           => 'https://example.com',
+					'is_active'         => 1,
+					'impressions'       => rand( 0, 100 ),
+					'clicks'            => rand( 0, 20 ),
+					'created_at'        => $now,
+					'updated_at'        => $now,
+				),
+				array( '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%d', '%d', '%s', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s' )
+			);
+		}
+
+		wp_redirect( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'merchants', 'remindmii_notice' => 'Test+data+created.' ), admin_url( 'admin.php' ) ) );
+		exit;
 	exit;
 }
 
