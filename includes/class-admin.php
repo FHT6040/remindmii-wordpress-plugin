@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -22,6 +22,7 @@ class Remindmii_Admin {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_remindmii_run_notifications', array( $this, 'handle_run_notifications' ) );
+		add_action( 'admin_post_remindmii_delete_user_data',  array( $this, 'handle_delete_user_data' ) );
 	}
 
 	/**
@@ -271,7 +272,7 @@ class Remindmii_Admin {
 	}
 
 	/**
-	 * Render placeholder admin page.
+	 * Render the main admin page (tab dispatcher).
 	 *
 	 * @return void
 	 */
@@ -280,144 +281,420 @@ class Remindmii_Admin {
 			return;
 		}
 
-		$notice  = isset( $_GET['remindmii_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
-		$filters = $this->get_notification_log_filters();
-		$logs    = $this->get_notification_logs( 30, $filters );
-		$total   = isset( $_GET['remindmii_total'] ) ? absint( wp_unslash( (string) $_GET['remindmii_total'] ) ) : 0;
-		$previewed = isset( $_GET['remindmii_previewed'] ) ? absint( wp_unslash( (string) $_GET['remindmii_previewed'] ) ) : 0;
-		$sent    = isset( $_GET['remindmii_sent'] ) ? absint( wp_unslash( (string) $_GET['remindmii_sent'] ) ) : 0;
-		$failed  = isset( $_GET['remindmii_failed'] ) ? absint( wp_unslash( (string) $_GET['remindmii_failed'] ) ) : 0;
+		$allowed_tabs = array( 'dashboard', 'users', 'logs', 'settings' );
+		$current_tab  = isset( $_GET['remindmii_tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['remindmii_tab'] ) ) : 'dashboard';
+		$current_tab  = in_array( $current_tab, $allowed_tabs, true ) ? $current_tab : 'dashboard';
+
+		$notice      = isset( $_GET['remindmii_notice'] )      ? sanitize_key( wp_unslash( (string) $_GET['remindmii_notice'] ) ) : '';
+		$total       = isset( $_GET['remindmii_total'] )       ? absint( wp_unslash( (string) $_GET['remindmii_total'] ) ) : 0;
+		$previewed   = isset( $_GET['remindmii_previewed'] )   ? absint( wp_unslash( (string) $_GET['remindmii_previewed'] ) ) : 0;
+		$sent        = isset( $_GET['remindmii_sent'] )        ? absint( wp_unslash( (string) $_GET['remindmii_sent'] ) ) : 0;
+		$failed      = isset( $_GET['remindmii_failed'] )      ? absint( wp_unslash( (string) $_GET['remindmii_failed'] ) ) : 0;
 		$rescheduled = isset( $_GET['remindmii_rescheduled'] ) ? absint( wp_unslash( (string) $_GET['remindmii_rescheduled'] ) ) : 0;
 
+		$base_url = admin_url( 'admin.php' );
 		?>
-		<div class="wrap remindmii-admin-page">
-			<h1><?php echo esc_html__( 'Remindmii', 'remindmii' ); ?></h1>
-			<p><?php echo esc_html__( 'Manage the plugin defaults for new and backfilled Remindmii users.', 'remindmii' ); ?></p>
+		<div class="wrap">
+			<h1 class="remindmii-admin-title">
+				<span class="dashicons dashicons-calendar-alt"></span>
+				<?php echo esc_html__( 'Remindmii', 'remindmii' ); ?>
+			</h1>
 
-			<?php if ( 'notifications_ran' === $notice ) : ?>
-				<div class="notice notice-success is-dismissible">
-					<p>
-						<?php
-						echo esc_html(
-							sprintf(
-								/* translators: 1: total reminders, 2: sent count, 3: failed count, 4: rescheduled count */
-								__( 'Notification processing completed. Evaluated %1$d reminder(s), sent %2$d, failed %3$d, rescheduled %4$d.', 'remindmii' ),
-								$total,
-								$sent,
-								$failed,
-								$rescheduled
-							)
-						);
-						?>
-					</p>
-				</div>
-			<?php endif; ?>
+			<nav class="nav-tab-wrapper remindmii-admin-tabs">
+				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'dashboard' ), $base_url ) ); ?>"
+				   class="nav-tab <?php echo 'dashboard' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-dashboard"></span>
+					<?php esc_html_e( 'Dashboard', 'remindmii' ); ?>
+				</a>
+				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'users' ), $base_url ) ); ?>"
+				   class="nav-tab <?php echo 'users' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-admin-users"></span>
+					<?php esc_html_e( 'Users', 'remindmii' ); ?>
+				</a>
+				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'logs' ), $base_url ) ); ?>"
+				   class="nav-tab <?php echo 'logs' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-list-view"></span>
+					<?php esc_html_e( 'Notification Logs', 'remindmii' ); ?>
+				</a>
+				<a href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'settings' ), $base_url ) ); ?>"
+				   class="nav-tab <?php echo 'settings' === $current_tab ? 'nav-tab-active' : ''; ?>">
+					<span class="dashicons dashicons-admin-settings"></span>
+					<?php esc_html_e( 'Settings', 'remindmii' ); ?>
+				</a>
+			</nav>
 
-			<?php if ( 'notifications_dry_run' === $notice ) : ?>
-				<div class="notice notice-info is-dismissible">
-					<p>
-						<?php
-						echo esc_html(
-							sprintf(
-								/* translators: 1: total reminders, 2: preview count */
-								__( 'Notification dry run completed. Evaluated %1$d reminder(s); %2$d preview log entries were added without sending emails.', 'remindmii' ),
-								$total,
-								$previewed
-							)
-						);
-						?>
-					</p>
-				</div>
-			<?php endif; ?>
-
-			<form method="post" action="options.php" class="remindmii-admin-form">
+			<div class="remindmii-admin-tab-content">
 				<?php
-				settings_fields( 'remindmii_settings_group' );
-				do_settings_sections( 'remindmii' );
-				submit_button( __( 'Save settings', 'remindmii' ) );
+				if ( 'dashboard' === $current_tab ) {
+					$this->render_tab_dashboard( $notice, $sent, $failed, $rescheduled, $total, $previewed );
+				} elseif ( 'users' === $current_tab ) {
+					$this->render_tab_users( $notice );
+				} elseif ( 'logs' === $current_tab ) {
+					$filters = $this->get_notification_log_filters();
+					$logs    = $this->get_notification_logs( 50, $filters );
+					$this->render_tab_logs( $filters, $logs );
+				} elseif ( 'settings' === $current_tab ) {
+					$this->render_tab_settings();
+				}
 				?>
-			</form>
-
-			<div class="remindmii-admin-section">
-				<h2><?php echo esc_html__( 'Notification Diagnostics', 'remindmii' ); ?></h2>
-				<p><?php echo esc_html__( 'Use this to run reminder notifications immediately and inspect the latest delivery logs.', 'remindmii' ); ?></p>
-
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="remindmii-admin-inline-form">
-					<input type="hidden" name="action" value="remindmii_run_notifications" />
-					<input type="hidden" name="mode" value="live" />
-					<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
-					<?php submit_button( __( 'Run Notifications Now', 'remindmii' ), 'secondary', 'submit', false ); ?>
-				</form>
-
-				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="remindmii-admin-inline-form">
-					<input type="hidden" name="action" value="remindmii_run_notifications" />
-					<input type="hidden" name="mode" value="dry-run" />
-					<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
-					<?php submit_button( __( 'Dry Run Notifications', 'remindmii' ), 'button', 'submit', false ); ?>
-				</form>
-
-				<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="remindmii-admin-filters-form">
-					<input type="hidden" name="page" value="remindmii" />
-					<label for="remindmii_log_status">
-						<span><?php echo esc_html__( 'Status', 'remindmii' ); ?></span>
-						<select id="remindmii_log_status" name="log_status">
-							<option value=""><?php echo esc_html__( 'All statuses', 'remindmii' ); ?></option>
-							<option value="sent" <?php selected( $filters['status'], 'sent' ); ?>><?php echo esc_html__( 'Sent', 'remindmii' ); ?></option>
-							<option value="failed" <?php selected( $filters['status'], 'failed' ); ?>><?php echo esc_html__( 'Failed', 'remindmii' ); ?></option>
-							<option value="preview" <?php selected( $filters['status'], 'preview' ); ?>><?php echo esc_html__( 'Preview', 'remindmii' ); ?></option>
-						</select>
-					</label>
-					<label for="remindmii_log_channel">
-						<span><?php echo esc_html__( 'Channel', 'remindmii' ); ?></span>
-						<select id="remindmii_log_channel" name="log_channel">
-							<option value=""><?php echo esc_html__( 'All channels', 'remindmii' ); ?></option>
-							<option value="email" <?php selected( $filters['channel'], 'email' ); ?>><?php echo esc_html__( 'Email', 'remindmii' ); ?></option>
-						</select>
-					</label>
-					<?php submit_button( __( 'Filter Logs', 'remindmii' ), 'secondary', '', false ); ?>
-					<a class="button button-link" href="<?php echo esc_url( admin_url( 'admin.php?page=remindmii' ) ); ?>"><?php echo esc_html__( 'Reset filters', 'remindmii' ); ?></a>
-				</form>
-
-				<div class="remindmii-table-wrap">
-					<table class="widefat striped remindmii-log-table">
-						<thead>
-							<tr>
-								<th><?php echo esc_html__( 'ID', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'User', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Reminder', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Type', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Channel', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Status', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Message', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Sent At', 'remindmii' ); ?></th>
-								<th><?php echo esc_html__( 'Created At', 'remindmii' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php if ( empty( $logs ) ) : ?>
-								<tr>
-									<td colspan="9"><?php echo esc_html__( 'No notification logs yet.', 'remindmii' ); ?></td>
-								</tr>
-							<?php else : ?>
-								<?php foreach ( $logs as $log ) : ?>
-									<tr>
-										<td><?php echo esc_html( (string) $log['id'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['user_id'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['reminder_id'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['notification_type'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['channel'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['status'] ); ?></td>
-										<td><?php echo esc_html( (string) $log['message'] ); ?></td>
-										<td><?php echo esc_html( ! empty( $log['sent_at'] ) ? (string) $log['sent_at'] : '-' ); ?></td>
-										<td><?php echo esc_html( (string) $log['created_at'] ); ?></td>
-									</tr>
-								<?php endforeach; ?>
-							<?php endif; ?>
-						</tbody>
-					</table>
-				</div>
 			</div>
 		</div>
 		<?php
 	}
+
+
+/**
+ * Render the Dashboard tab.
+ */
+private function render_tab_dashboard( $notice, $sent, $failed, $rescheduled, $total, $previewed ) {
+$stats    = $this->get_plugin_stats();
+$next_run = wp_next_scheduled( 'remindmii_process_notifications' );
+?>
+<div class="remindmii-admin-page">
+<?php if ( 'notifications_ran' === $notice ) : ?>
+<div class="notice notice-success is-dismissible"><p><?php echo esc_html( sprintf( __( 'Notifications sent. Evaluated %1$d, sent %2$d, failed %3$d, rescheduled %4$d.', 'remindmii' ), $total, $sent, $failed, $rescheduled ) ); ?></p></div>
+<?php endif; ?>
+<?php if ( 'notifications_dry_run' === $notice ) : ?>
+<div class="notice notice-info is-dismissible"><p><?php echo esc_html( sprintf( __( 'Dry run complete. Evaluated %1$d reminder(s); %2$d preview entries added without sending emails.', 'remindmii' ), $total, $previewed ) ); ?></p></div>
+<?php endif; ?>
+<?php if ( 'user_data_deleted' === $notice ) : ?>
+<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'User data deleted successfully.', 'remindmii' ); ?></p></div>
+<?php endif; ?>
+
+<div class="remindmii-stats-grid">
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-admin-users"></span>
+<span class="remindmii-stat-value"><?php echo esc_html( (string) $stats['total_users'] ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Users', 'remindmii' ); ?></span>
+</div>
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-calendar-alt"></span>
+<span class="remindmii-stat-value"><?php echo esc_html( (string) $stats['total_reminders'] ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Reminders', 'remindmii' ); ?></span>
+</div>
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-star-filled"></span>
+<span class="remindmii-stat-value"><?php echo esc_html( (string) $stats['total_wishlists'] ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Wishlists', 'remindmii' ); ?></span>
+</div>
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-awards"></span>
+<span class="remindmii-stat-value"><?php echo esc_html( (string) $stats['total_achievements'] ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Achievements Earned', 'remindmii' ); ?></span>
+</div>
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-email-alt"></span>
+<span class="remindmii-stat-value"><?php echo esc_html( (string) $stats['emails_sent_today'] ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Emails Sent Today', 'remindmii' ); ?></span>
+</div>
+<div class="remindmii-stat-card">
+<span class="remindmii-stat-icon dashicons dashicons-clock"></span>
+<span class="remindmii-stat-value"><?php echo $next_run ? esc_html( human_time_diff( $next_run ) ) : esc_html__( 'N/A', 'remindmii' ); ?></span>
+<span class="remindmii-stat-label"><?php esc_html_e( 'Next Cron Run', 'remindmii' ); ?></span>
+</div>
+</div>
+
+<div class="remindmii-admin-section">
+<h2><?php esc_html_e( 'Notification Diagnostics', 'remindmii' ); ?></h2>
+<p><?php esc_html_e( 'Manually trigger the notification cron or run a dry run to preview which reminders are due.', 'remindmii' ); ?></p>
+<div class="remindmii-diag-buttons">
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline">
+<input type="hidden" name="action" value="remindmii_run_notifications" />
+<input type="hidden" name="mode" value="live" />
+<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
+<?php submit_button( __( 'Run Notifications Now', 'remindmii' ), 'secondary', 'submit', false ); ?>
+</form>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline;margin-left:8px">
+<input type="hidden" name="action" value="remindmii_run_notifications" />
+<input type="hidden" name="mode" value="dry-run" />
+<?php wp_nonce_field( 'remindmii_run_notifications' ); ?>
+<?php submit_button( __( 'Dry Run', 'remindmii' ), 'button', 'submit', false ); ?>
+</form>
+</div>
+</div>
+</div>
+<?php
+}
+
+/**
+ * Render the Users tab.
+ */
+private function render_tab_users( $notice ) {
+$users    = $this->get_users_list();
+$base_url = admin_url( 'admin.php' );
+?>
+<div class="remindmii-admin-page">
+<?php if ( 'user_data_deleted' === $notice ) : ?>
+<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'User data deleted successfully.', 'remindmii' ); ?></p></div>
+<?php endif; ?>
+
+<h2 style="margin-top:0"><?php echo esc_html( sprintf( __( 'All Users (%d)', 'remindmii' ), count( $users ) ) ); ?></h2>
+
+<div class="remindmii-table-wrap">
+<table class="widefat striped remindmii-users-table">
+<thead>
+<tr>
+<th><?php esc_html_e( 'ID', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Login', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Display Name', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Email', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Registered', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Reminders', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Wishlists', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Points', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Actions', 'remindmii' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<?php if ( empty( $users ) ) : ?>
+<tr><td colspan="9"><?php esc_html_e( 'No users found.', 'remindmii' ); ?></td></tr>
+<?php else : ?>
+<?php foreach ( $users as $u ) : ?>
+<tr>
+<td><?php echo esc_html( (string) $u['id'] ); ?></td>
+<td><?php echo esc_html( $u['login'] ); ?></td>
+<td><?php echo esc_html( $u['display_name'] ); ?></td>
+<td><?php echo esc_html( $u['email'] ); ?></td>
+<td><?php echo esc_html( wp_date( get_option( 'date_format' ), strtotime( $u['registered'] ) ) ); ?></td>
+<td><?php echo esc_html( (string) $u['reminders'] ); ?></td>
+<td><?php echo esc_html( (string) $u['wishlists'] ); ?></td>
+<td><?php echo esc_html( (string) $u['points'] ); ?></td>
+<td>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>"
+  onsubmit="return confirm('<?php echo esc_js( __( 'Delete all Remindmii data for this user? This cannot be undone.', 'remindmii' ) ); ?>')">
+<input type="hidden" name="action" value="remindmii_delete_user_data" />
+<input type="hidden" name="user_id" value="<?php echo absint( $u['id'] ); ?>" />
+<?php wp_nonce_field( 'remindmii_delete_user_data_' . $u['id'] ); ?>
+<button type="submit" class="button button-link-delete">
+<?php esc_html_e( 'Delete Data', 'remindmii' ); ?>
+</button>
+</form>
+</td>
+</tr>
+<?php endforeach; ?>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+</div>
+<?php
+}
+
+/**
+ * Render the Notification Logs tab.
+ */
+private function render_tab_logs( $filters, $logs ) {
+?>
+<div class="remindmii-admin-page">
+<h2 style="margin-top:0"><?php esc_html_e( 'Notification Logs', 'remindmii' ); ?></h2>
+
+<form method="get" action="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>" class="remindmii-admin-filters-form">
+<input type="hidden" name="page" value="remindmii" />
+<input type="hidden" name="remindmii_tab" value="logs" />
+<label for="remindmii_log_status">
+<span><?php esc_html_e( 'Status', 'remindmii' ); ?></span>
+<select id="remindmii_log_status" name="log_status">
+<option value=""><?php esc_html_e( 'All statuses', 'remindmii' ); ?></option>
+<option value="sent" <?php selected( $filters['status'], 'sent' ); ?>><?php esc_html_e( 'Sent', 'remindmii' ); ?></option>
+<option value="failed" <?php selected( $filters['status'], 'failed' ); ?>><?php esc_html_e( 'Failed', 'remindmii' ); ?></option>
+<option value="preview" <?php selected( $filters['status'], 'preview' ); ?>><?php esc_html_e( 'Preview', 'remindmii' ); ?></option>
+</select>
+</label>
+<label for="remindmii_log_channel">
+<span><?php esc_html_e( 'Channel', 'remindmii' ); ?></span>
+<select id="remindmii_log_channel" name="log_channel">
+<option value=""><?php esc_html_e( 'All channels', 'remindmii' ); ?></option>
+<option value="email" <?php selected( $filters['channel'], 'email' ); ?>><?php esc_html_e( 'Email', 'remindmii' ); ?></option>
+</select>
+</label>
+<?php submit_button( __( 'Filter', 'remindmii' ), 'secondary', '', false ); ?>
+<a class="button button-link" href="<?php echo esc_url( add_query_arg( array( 'page' => 'remindmii', 'remindmii_tab' => 'logs' ), admin_url( 'admin.php' ) ) ); ?>"><?php esc_html_e( 'Reset', 'remindmii' ); ?></a>
+</form>
+
+<div class="remindmii-table-wrap">
+<table class="widefat striped remindmii-log-table">
+<thead>
+<tr>
+<th><?php esc_html_e( 'ID', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'User', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Reminder', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Type', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Channel', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Status', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Message', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Sent At', 'remindmii' ); ?></th>
+<th><?php esc_html_e( 'Created At', 'remindmii' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<?php if ( empty( $logs ) ) : ?>
+<tr><td colspan="9"><?php esc_html_e( 'No notification logs yet.', 'remindmii' ); ?></td></tr>
+<?php else : ?>
+<?php foreach ( $logs as $log ) : ?>
+<tr>
+<td><?php echo esc_html( (string) $log['id'] ); ?></td>
+<td><?php echo esc_html( (string) $log['user_id'] ); ?></td>
+<td><?php echo esc_html( (string) $log['reminder_id'] ); ?></td>
+<td><?php echo esc_html( (string) $log['notification_type'] ); ?></td>
+<td><?php echo esc_html( (string) $log['channel'] ); ?></td>
+<td>
+<span class="remindmii-log-status remindmii-log-status--<?php echo esc_attr( (string) $log['status'] ); ?>">
+<?php echo esc_html( (string) $log['status'] ); ?>
+</span>
+</td>
+<td><?php echo esc_html( (string) $log['message'] ); ?></td>
+<td><?php echo esc_html( ! empty( $log['sent_at'] ) ? (string) $log['sent_at'] : '-' ); ?></td>
+<td><?php echo esc_html( (string) $log['created_at'] ); ?></td>
+</tr>
+<?php endforeach; ?>
+<?php endif; ?>
+</tbody>
+</table>
+</div>
+</div>
+<?php
+}
+
+/**
+ * Render the Settings tab.
+ */
+private function render_tab_settings() {
+?>
+<div class="remindmii-admin-page">
+<h2 style="margin-top:0"><?php esc_html_e( 'Settings', 'remindmii' ); ?></h2>
+<form method="post" action="options.php" class="remindmii-admin-form">
+<?php
+settings_fields( 'remindmii_settings_group' );
+do_settings_sections( 'remindmii' );
+submit_button( __( 'Save Settings', 'remindmii' ) );
+?>
+</form>
+</div>
+<?php
+}
+
+/**
+ * Handle deletion of all plugin data for a single user.
+ */
+public function handle_delete_user_data() {
+if ( ! current_user_can( 'manage_options' ) ) {
+wp_die( esc_html__( 'You are not allowed to perform this action.', 'remindmii' ) );
+}
+
+$user_id = isset( $_POST['user_id'] ) ? absint( wp_unslash( $_POST['user_id'] ) ) : 0;
+if ( $user_id <= 0 ) {
+wp_die( esc_html__( 'Invalid user ID.', 'remindmii' ) );
+}
+
+check_admin_referer( 'remindmii_delete_user_data_' . $user_id );
+
+global $wpdb;
+$tables = array(
+'remindmii_reminders',
+'remindmii_wishlist_items',
+'remindmii_wishlists',
+'remindmii_wishlist_shares',
+'remindmii_user_preferences',
+'remindmii_user_achievements',
+'remindmii_user_stats',
+'remindmii_user_profiles',
+'remindmii_notifications_log',
+);
+
+foreach ( $tables as $table ) {
+$wpdb->delete( $wpdb->prefix . $table, array( 'user_id' => $user_id ), array( '%d' ) );
+}
+
+wp_safe_redirect(
+add_query_arg(
+array(
+'page'             => 'remindmii',
+'remindmii_tab'   => 'users',
+'remindmii_notice' => 'user_data_deleted',
+),
+admin_url( 'admin.php' )
+)
+);
+exit;
+}
+
+/**
+ * Aggregate plugin-wide statistics.
+ *
+ * @return array<string, int>
+ */
+private function get_plugin_stats() {
+global $wpdb;
+$today = current_time( 'Y-m-d' );
+
+return array(
+'total_users'         => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}remindmii_user_profiles" ),
+'total_reminders'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}remindmii_reminders" ),
+'total_wishlists'     => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}remindmii_wishlists" ),
+'total_achievements'  => (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}remindmii_user_achievements" ),
+'emails_sent_today'   => (int) $wpdb->get_var(
+$wpdb->prepare(
+"SELECT COUNT(*) FROM {$wpdb->prefix}remindmii_notifications_log WHERE status = 'sent' AND DATE(sent_at) = %s",
+$today
+)
+),
+);
+}
+
+/**
+ * Return all WP users annotated with Remindmii data counts.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+private function get_users_list() {
+global $wpdb;
+
+$wp_users = get_users( array( 'fields' => array( 'ID', 'user_login', 'display_name', 'user_email', 'user_registered' ) ) );
+if ( empty( $wp_users ) ) {
+return array();
+}
+
+$ids_placeholder = implode( ',', array_fill( 0, count( $wp_users ), '%d' ) );
+$ids             = array_column( (array) $wp_users, 'ID' );
+
+$reminder_counts = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT user_id, COUNT(*) AS cnt FROM {$wpdb->prefix}remindmii_reminders WHERE user_id IN ($ids_placeholder) GROUP BY user_id",
+$ids
+),
+OBJECT_K
+);
+
+$wishlist_counts = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT user_id, COUNT(*) AS cnt FROM {$wpdb->prefix}remindmii_wishlists WHERE user_id IN ($ids_placeholder) GROUP BY user_id",
+$ids
+),
+OBJECT_K
+);
+
+$points_rows = $wpdb->get_results(
+$wpdb->prepare(
+"SELECT user_id, total_points FROM {$wpdb->prefix}remindmii_user_stats WHERE user_id IN ($ids_placeholder)",
+$ids
+),
+OBJECT_K
+);
+
+$result = array();
+foreach ( $wp_users as $u ) {
+$result[] = array(
+'id'           => $u->ID,
+'login'        => $u->user_login,
+'display_name' => $u->display_name,
+'email'        => $u->user_email,
+'registered'   => $u->user_registered,
+'reminders'    => isset( $reminder_counts[ $u->ID ] ) ? (int) $reminder_counts[ $u->ID ]->cnt : 0,
+'wishlists'    => isset( $wishlist_counts[ $u->ID ] ) ? (int) $wishlist_counts[ $u->ID ]->cnt : 0,
+'points'       => isset( $points_rows[ $u->ID ] ) ? (int) $points_rows[ $u->ID ]->total_points : 0,
+);
+}
+
+return $result;
+}
 }

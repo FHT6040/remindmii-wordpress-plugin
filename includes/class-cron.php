@@ -108,32 +108,74 @@ class Remindmii_Cron {
 	}
 
 	/**
-	 * Send the reminder email.
+	 * Send the reminder email (HTML + plain-text multipart).
 	 *
 	 * @param array<string, mixed> $reminder Reminder payload.
 	 * @return bool
 	 */
 	private function send_email_notification( $reminder ) {
-		$site_name     = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
-		$display_name  = ! empty( $reminder['profile_full_name'] ) ? $reminder['profile_full_name'] : __( 'there', 'remindmii' );
-		$subject       = sprintf( __( '[%1$s] Reminder: %2$s', 'remindmii' ), $site_name, $reminder['title'] );
-		$body_lines    = array(
+		$site_name    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
+		$site_url     = home_url();
+		$display_name = ! empty( $reminder['profile_full_name'] ) ? $reminder['profile_full_name'] : __( 'there', 'remindmii' );
+		$subject      = sprintf( __( '[%1$s] Reminder: %2$s', 'remindmii' ), $site_name, $reminder['title'] );
+		$date_str     = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $reminder['reminder_date'] ) );
+
+		// --- HTML body ---
+		$desc_html = '';
+		if ( ! empty( $reminder['description'] ) ) {
+			$desc_html = '<p style="margin:0 0 12px"><strong>' . esc_html__( 'Details:', 'remindmii' ) . '</strong><br>'
+				. nl2br( esc_html( wp_strip_all_tags( (string) $reminder['description'] ) ) ) . '</p>';
+		}
+
+		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;padding:0;background:#f4f5f7;font-family:Arial,sans-serif">'
+			. '<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:32px 0"><tr><td align="center">'
+			. '<table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;max-width:560px">'
+			. '<tr><td style="background:#6366f1;padding:24px 32px">'
+			.   '<p style="margin:0;color:#fff;font-size:22px;font-weight:700">📅 ' . esc_html( $site_name ) . '</p>'
+			. '</td></tr>'
+			. '<tr><td style="padding:32px">'
+			.   '<p style="margin:0 0 12px;font-size:16px">' . sprintf( esc_html__( 'Hi %s,', 'remindmii' ), esc_html( $display_name ) ) . '</p>'
+			.   '<p style="margin:0 0 20px;font-size:15px;color:#374151">'
+			.     sprintf( esc_html__( 'This is your reminder for:', 'remindmii' ) )
+			.   '</p>'
+			.   '<div style="background:#f3f4f6;border-left:4px solid #6366f1;border-radius:4px;padding:16px 20px;margin:0 0 20px">'
+			.     '<p style="margin:0 0 6px;font-size:18px;font-weight:700;color:#111827">' . esc_html( $reminder['title'] ) . '</p>'
+			.     '<p style="margin:0;font-size:14px;color:#6b7280">🗓 ' . esc_html( $date_str ) . '</p>'
+			.   '</div>'
+			.   $desc_html
+			.   '<p style="margin:0 0 24px;font-size:13px;color:#9ca3af">'
+			.     sprintf( esc_html__( 'Sent %d hour(s) before your reminder based on your Remindmii settings.', 'remindmii' ), max( 1, (int) $reminder['notification_hours'] ) )
+			.   '</p>'
+			.   '<p style="margin:0"><a href="' . esc_url( $site_url ) . '" style="display:inline-block;background:#6366f1;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-size:14px;font-weight:600">'
+			.     esc_html__( 'Open Remindmii', 'remindmii' )
+			.   '</a></p>'
+			. '</td></tr>'
+			. '<tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb">'
+			.   '<p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">&copy; ' . esc_html( $site_name ) . ' &mdash; <a href="' . esc_url( $site_url ) . '" style="color:#6366f1">' . esc_html( $site_url ) . '</a></p>'
+			. '</td></tr>'
+			. '</table></td></tr></table></body></html>';
+
+		// --- Plain-text fallback ---
+		$plain_lines = array(
 			sprintf( __( 'Hi %s,', 'remindmii' ), $display_name ),
 			'',
 			sprintf( __( 'This is your reminder for "%s".', 'remindmii' ), $reminder['title'] ),
-			sprintf( __( 'Scheduled for: %s', 'remindmii' ), wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $reminder['reminder_date'] ) ) ),
+			sprintf( __( 'Scheduled for: %s', 'remindmii' ), $date_str ),
 		);
-
 		if ( ! empty( $reminder['description'] ) ) {
-			$body_lines[] = '';
-			$body_lines[] = __( 'Details:', 'remindmii' );
-			$body_lines[] = wp_strip_all_tags( (string) $reminder['description'] );
+			$plain_lines[] = '';
+			$plain_lines[] = __( 'Details:', 'remindmii' );
+			$plain_lines[] = wp_strip_all_tags( (string) $reminder['description'] );
 		}
+		$plain_lines[] = '';
+		$plain_lines[] = sprintf( __( 'Sent %d hour(s) before based on your Remindmii profile settings.', 'remindmii' ), max( 1, (int) $reminder['notification_hours'] ) );
+		$plain_lines[] = '';
+		$plain_lines[] = $site_url;
 
-		$body_lines[] = '';
-		$body_lines[] = sprintf( __( 'Sent %d hour(s) before based on your Remindmii profile settings.', 'remindmii' ), max( 1, (int) $reminder['notification_hours'] ) );
+		// WP multipart: send HTML with Content-Type header; WP auto-adds text/plain when $message is array.
+		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-		return wp_mail( $reminder['profile_email'], $subject, implode( "\n", $body_lines ) );
+		return wp_mail( $reminder['profile_email'], $subject, $html, $headers );
 	}
 
 	/**
