@@ -26,7 +26,66 @@ class Remindmii_Installer {
 		Remindmii_DB_Schema::create_tables();
 		self::ensure_default_settings();
 		self::backfill_existing_users();
+		self::ensure_pages();
 		update_option( 'remindmii_db_version', REMINDMII_VERSION );
+	}
+
+	/**
+	 * Create required frontend pages if they do not already exist.
+	 *
+	 * @return void
+	 */
+	private static function ensure_pages() {
+		$pages = array(
+			array(
+				'title'   => __( 'Remindmii', 'remindmii' ),
+				'slug'    => 'remindmii',
+				'content' => '[remindmii_app]',
+			),
+			array(
+				'title'   => __( 'Wishlist', 'remindmii' ),
+				'slug'    => 'wishlist',
+				'content' => '[remindmii_public_wishlist]',
+			),
+			array(
+				'title'   => __( 'Merchant Portal', 'remindmii' ),
+				'slug'    => 'merchant-portal',
+				'content' => '[remindmii_merchant]',
+			),
+			array(
+				'title'   => __( 'Privacy Policy', 'remindmii' ),
+				'slug'    => 'privacy',
+				'content' => '',
+			),
+			array(
+				'title'   => __( 'Terms &amp; Conditions', 'remindmii' ),
+				'slug'    => 'terms',
+				'content' => '',
+			),
+		);
+
+		$author_id = get_current_user_id();
+		if ( $author_id <= 0 ) {
+			$author_id = 1;
+		}
+
+		foreach ( $pages as $page_data ) {
+			$existing = get_page_by_path( $page_data['slug'], OBJECT, 'page' );
+			if ( $existing instanceof WP_Post ) {
+				continue;
+			}
+
+			wp_insert_post(
+				array(
+					'post_title'   => wp_strip_all_tags( $page_data['title'] ),
+					'post_name'    => $page_data['slug'],
+					'post_content' => $page_data['content'],
+					'post_status'  => 'publish',
+					'post_type'    => 'page',
+					'post_author'  => $author_id,
+				)
+			);
+		}
 	}
 
 	/**
