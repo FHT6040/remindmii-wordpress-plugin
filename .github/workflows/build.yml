@@ -1,0 +1,38 @@
+name: Build Plugin ZIP
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build remindmii.zip
+        run: |
+          mkdir -p dist/remindmii
+          rsync -a \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='dist' \
+            . dist/remindmii/
+          cd dist
+          zip -r remindmii.zip remindmii/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
+          body: |
+            Automatisk bygget fra commit ${{ github.sha }}.
+            Download `remindmii.zip` og installer direkte via WordPress → Plugins → Tilføj ny → Upload.
+          files: dist/remindmii.zip
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
