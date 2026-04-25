@@ -85,6 +85,68 @@ class Remindmii_User_Profiles_Repository {
 	}
 
 	/**
+	 * Return existing unsubscribe token or generate and persist a new one.
+	 *
+	 * @param int $user_id WordPress user ID.
+	 * @return string|null
+	 */
+	public function get_or_create_unsubscribe_token( $user_id ) {
+		global $wpdb;
+
+		$user_id  = absint( $user_id );
+		$existing = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT unsubscribe_token FROM {$this->table_name()} WHERE user_id = %d LIMIT 1",
+				$user_id
+			)
+		);
+
+		if ( ! empty( $existing ) ) {
+			return $existing;
+		}
+
+		$token = wp_generate_password( 48, false );
+		$wpdb->update(
+			$this->table_name(),
+			array( 'unsubscribe_token' => $token ),
+			array( 'user_id' => $user_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		return $token;
+	}
+
+	/**
+	 * Disable email notifications for the profile matching the given token.
+	 *
+	 * @param string $token Unsubscribe token.
+	 * @return bool True when a row was updated.
+	 */
+	public function disable_notifications_by_token( $token ) {
+		global $wpdb;
+
+		$token = sanitize_text_field( (string) $token );
+
+		if ( empty( $token ) ) {
+			return false;
+		}
+
+		$updated = $wpdb->update(
+			$this->table_name(),
+			array(
+				'email_notifications' => 0,
+				'updated_at'          => current_time( 'mysql' ),
+			),
+			array( 'unsubscribe_token' => $token ),
+			array( '%d', '%s' ),
+			array( '%s' )
+		);
+
+		return false !== $updated && $updated > 0;
+	}
+
+	/**
 	 * Normalize profile row.
 	 *
 	 * @param array<string, mixed> $record Raw database row.
@@ -95,6 +157,7 @@ class Remindmii_User_Profiles_Repository {
 		$record['user_id']             = (int) $record['user_id'];
 		$record['email_notifications'] = (bool) $record['email_notifications'];
 		$record['notification_hours']  = (int) $record['notification_hours'];
+		unset( $record['unsubscribe_token'] );
 
 		return $record;
 	}

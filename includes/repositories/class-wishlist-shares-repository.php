@@ -28,7 +28,7 @@ class Remindmii_Wishlist_Shares_Repository {
 	 * @param string $permission         'view' or 'edit'.
 	 * @return int|false Insert ID or false.
 	 */
-	public function create( $wishlist_id, $owner_id, $shared_with_email, $permission = 'view' ) {
+	public function create( $wishlist_id, $owner_id, $shared_with_email, $permission = 'view', $expires_at = null ) {
 		global $wpdb;
 
 		// Resolve email to WP user ID if possible.
@@ -46,9 +46,10 @@ class Remindmii_Wishlist_Shares_Repository {
 				'shared_with_user_id' => $shared_user_id,
 				'permission'          => in_array( $permission, array( 'view', 'edit' ), true ) ? $permission : 'view',
 				'token'               => $token,
+				'expires_at'          => $expires_at,
 				'created_at'          => current_time( 'mysql' ),
 			),
-			array( '%d', '%d', '%s', '%d', '%s', '%s', '%s' )
+			array( '%d', '%d', '%s', '%d', '%s', '%s', '%s', '%s' )
 		);
 
 		if ( false === $result ) {
@@ -95,10 +96,12 @@ class Remindmii_Wishlist_Shares_Repository {
 				"SELECT s.*, w.title AS wishlist_title, w.description AS wishlist_description
 				 FROM {$shares_table} s
 				 INNER JOIN {$wishlist_table} w ON w.id = s.wishlist_id
-				 WHERE s.shared_with_user_id = %d OR s.shared_with_email = %s
+				 WHERE ( s.shared_with_user_id = %d OR s.shared_with_email = %s )
+				   AND ( s.expires_at IS NULL OR s.expires_at > %s )
 				 ORDER BY s.created_at DESC",
 				(int) $user_id,
-				$email
+				$email,
+				current_time( 'mysql' )
 			),
 			ARRAY_A
 		);

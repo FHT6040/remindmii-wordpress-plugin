@@ -45,6 +45,7 @@ class Remindmii_DB_Schema {
 			is_recurring tinyint(1) NOT NULL DEFAULT 0,
 			recurrence_interval varchar(50) DEFAULT NULL,
 			notification_sent tinyint(1) NOT NULL DEFAULT 0,
+			notification_hours int(11) DEFAULT NULL,
 			is_completed tinyint(1) NOT NULL DEFAULT 0,
 			location_name varchar(191) DEFAULT NULL,
 			location_lat decimal(10,7) DEFAULT NULL,
@@ -70,11 +71,13 @@ class Remindmii_DB_Schema {
 			push_token longtext NULL,
 			email_notifications tinyint(1) NOT NULL DEFAULT 1,
 			notification_hours int(11) NOT NULL DEFAULT 24,
+			unsubscribe_token varchar(64) DEFAULT NULL,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			UNIQUE KEY user_id (user_id),
-			KEY email (email)
+			KEY email (email),
+			KEY unsubscribe_token (unsubscribe_token)
 		) {$charset_collate};";
 
 		$user_preferences_sql = "CREATE TABLE {$user_preferences_table} (
@@ -117,13 +120,15 @@ class Remindmii_DB_Schema {
 			user_id bigint(20) unsigned NOT NULL,
 			title varchar(191) NOT NULL,
 			description longtext NULL,
+			slug varchar(191) DEFAULT NULL,
 			is_public tinyint(1) NOT NULL DEFAULT 0,
 			public_token varchar(64) DEFAULT NULL,
 			created_at datetime NOT NULL,
 			updated_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			KEY user_id (user_id),
-			UNIQUE KEY public_token (public_token)
+			UNIQUE KEY public_token (public_token),
+			UNIQUE KEY slug (slug)
 		) {$charset_collate};";
 
 		$wishlist_items_sql = "CREATE TABLE {$wishlist_items_table} (
@@ -160,6 +165,7 @@ class Remindmii_DB_Schema {
 			shared_with_user_id bigint(20) unsigned NULL,
 			permission varchar(20) NOT NULL DEFAULT 'view',
 			token varchar(64) NOT NULL,
+			expires_at datetime DEFAULT NULL,
 			created_at datetime NOT NULL,
 			PRIMARY KEY  (id),
 			KEY wishlist_id (wishlist_id),
@@ -242,6 +248,7 @@ class Remindmii_DB_Schema {
 			is_active tinyint(1) NOT NULL DEFAULT 1,
 			start_date date DEFAULT NULL,
 			end_date date DEFAULT NULL,
+			impression_cap int(11) DEFAULT NULL,
 			impressions int(11) NOT NULL DEFAULT 0,
 			clicks int(11) NOT NULL DEFAULT 0,
 			created_at datetime NOT NULL,

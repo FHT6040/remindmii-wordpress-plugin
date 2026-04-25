@@ -116,6 +116,11 @@ class Remindmii_Cron {
 	private function send_email_notification( $reminder ) {
 		$site_name    = wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES );
 		$site_url     = home_url();
+		$profiles_repo      = new Remindmii_User_Profiles_Repository();
+		$unsubscribe_token  = $profiles_repo->get_or_create_unsubscribe_token( (int) $reminder['user_id'] );
+		$unsubscribe_url    = $unsubscribe_token
+			? rest_url( 'remindmii/v1/unsubscribe?token=' . rawurlencode( $unsubscribe_token ) )
+			: '';
 		$display_name = ! empty( $reminder['profile_full_name'] ) ? $reminder['profile_full_name'] : __( 'there', 'remindmii' );
 		$subject      = sprintf( __( '[%1$s] Reminder: %2$s', 'remindmii' ), $site_name, $reminder['title'] );
 		$date_str     = wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $reminder['reminder_date'] ) );
@@ -151,7 +156,9 @@ class Remindmii_Cron {
 			.   '</a></p>'
 			. '</td></tr>'
 			. '<tr><td style="background:#f9fafb;padding:16px 32px;border-top:1px solid #e5e7eb">'
-			.   '<p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">&copy; ' . esc_html( $site_name ) . ' &mdash; <a href="' . esc_url( $site_url ) . '" style="color:#6366f1">' . esc_html( $site_url ) . '</a></p>'
+			.   '<p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">&copy; ' . esc_html( $site_name ) . ' &mdash; <a href="' . esc_url( $site_url ) . '" style="color:#6366f1">' . esc_html( $site_url ) . '</a>'
+			.   ( $unsubscribe_url ? ' &mdash; <a href="' . esc_url( $unsubscribe_url ) . '" style="color:#9ca3af">' . esc_html__( 'Unsubscribe', 'remindmii' ) . '</a>' : '' )
+			.   '</p>'
 			. '</td></tr>'
 			. '</table></td></tr></table></body></html>';
 
@@ -171,6 +178,10 @@ class Remindmii_Cron {
 		$plain_lines[] = sprintf( __( 'Sent %d hour(s) before based on your Remindmii profile settings.', 'remindmii' ), max( 1, (int) $reminder['notification_hours'] ) );
 		$plain_lines[] = '';
 		$plain_lines[] = $site_url;
+		if ( $unsubscribe_url ) {
+			$plain_lines[] = '';
+			$plain_lines[] = sprintf( __( 'Unsubscribe: %s', 'remindmii' ), $unsubscribe_url );
+		}
 
 		// WP multipart: send HTML with Content-Type header; WP auto-adds text/plain when $message is array.
 		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
@@ -186,6 +197,57 @@ class Remindmii_Cron {
 	 * @param string               $message  Log message.
 	 * @return void
 	 */
+	/**
+	 * Retry a previously failed notification by log ID.
+	 *
+	 * @param int $log_id Notification log row ID.
+	 * @return bool True on successful send.
+	 */
+	public function retry_from_log( $log_id ) {
+		global $wpdb;
+
+		$log = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}remindmii_notifications_log WHERE id = %d AND status = 'failed'",
+				absint( $log_id )
+			),
+			ARRAY_A
+		);
+
+		if ( ! $log ) {
+			return false;
+		}
+
+		$context = json_decode( $log['context'], true );
+		if ( ! is_array( $context ) ) {
+			return false;
+		}
+
+		$reminder = array_merge(
+			$context,
+			array(
+				'id'      => (int) $log['reminder_id'],
+				'user_id' => (int) $log['user_id'],
+			)
+		);
+
+		$sent = $this->send_email_notification( $reminder );
+
+		$wpdb->update(
+			$wpdb->prefix . 'remindmii_notifications_log',
+			array(
+				'status'  => $sent ? 'sent' : 'failed',
+				'message' => $sent ? __( 'Retry succeeded.', 'remindmii' ) : __( 'Retry failed.', 'remindmii' ),
+				'sent_at' => $sent ? current_time( 'mysql' ) : null,
+			),
+			array( 'id' => absint( $log_id ) ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		return $sent;
+	}
+
 	private function log_notification( $reminder, $status, $message ) {
 		global $wpdb;
 

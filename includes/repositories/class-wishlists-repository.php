@@ -43,7 +43,7 @@ class Remindmii_Wishlists_Repository {
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT id, user_id, title, description, is_public, public_token, created_at, updated_at
+				"SELECT id, user_id, title, slug, description, is_public, public_token, created_at, updated_at
 				FROM {$this->wishlists_table()}
 				WHERE user_id = %d
 				ORDER BY created_at DESC",
@@ -67,7 +67,7 @@ class Remindmii_Wishlists_Repository {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, user_id, title, description, is_public, public_token, created_at, updated_at
+				"SELECT id, user_id, title, slug, description, is_public, public_token, created_at, updated_at
 				FROM {$this->wishlists_table()}
 				WHERE id = %d AND user_id = %d",
 				absint( $id ),
@@ -96,7 +96,7 @@ class Remindmii_Wishlists_Repository {
 
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT id, user_id, title, description, is_public, public_token, created_at, updated_at
+				"SELECT id, user_id, title, slug, description, is_public, public_token, created_at, updated_at
 				FROM {$this->wishlists_table()}
 				WHERE public_token = %s AND is_public = 1",
 				$token
@@ -105,6 +105,54 @@ class Remindmii_Wishlists_Repository {
 		);
 
 		return $row ? $this->map_wishlist( $row ) : null;
+	}
+
+	/**
+	 * Get a public wishlist by its slug.
+	 *
+	 * @param string $slug URL slug.
+	 * @return array<string, mixed>|null
+	 */
+	public function get_by_slug( $slug ) {
+		global $wpdb;
+
+		$slug = sanitize_title( (string) $slug );
+
+		if ( '' === $slug ) {
+			return null;
+		}
+
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id, user_id, title, slug, description, is_public, public_token, created_at, updated_at
+				FROM {$this->wishlists_table()}
+				WHERE slug = %s AND is_public = 1",
+				$slug
+			),
+			ARRAY_A
+		);
+
+		return $row ? $this->map_wishlist( $row ) : null;
+	}
+
+	/**
+	 * Persist a slug for an existing wishlist (called after creation to embed the ID for uniqueness).
+	 *
+	 * @param int    $id      Wishlist ID.
+	 * @param int    $user_id User ID.
+	 * @param string $slug    URL-safe slug.
+	 * @return void
+	 */
+	public function set_slug( $id, $user_id, $slug ) {
+		global $wpdb;
+
+		$wpdb->update(
+			$this->wishlists_table(),
+			array( 'slug' => sanitize_title( $slug ) ),
+			array( 'id' => absint( $id ), 'user_id' => absint( $user_id ) ),
+			array( '%s' ),
+			array( '%d', '%d' )
+		);
 	}
 
 	/**
@@ -372,6 +420,7 @@ class Remindmii_Wishlists_Repository {
 			'id'           => (int) $row['id'],
 			'user_id'      => (int) $row['user_id'],
 			'title'        => (string) $row['title'],
+			'slug'         => isset( $row['slug'] ) && null !== $row['slug'] ? (string) $row['slug'] : null,
 			'description'  => (string) ( $row['description'] ?? '' ),
 			'is_public'    => (bool) $row['is_public'],
 			'public_token' => $row['is_public'] ? (string) $row['public_token'] : null,

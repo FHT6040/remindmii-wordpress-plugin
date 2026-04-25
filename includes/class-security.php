@@ -26,4 +26,35 @@ class Remindmii_Security {
 
 		return $links;
 	}
+
+	/**
+	 * Enforce a per-user rate limit using transients.
+	 *
+	 * Returns a WP_Error when the limit is exceeded, true otherwise.
+	 *
+	 * @param int $user_id      WordPress user ID.
+	 * @param int $limit        Max requests allowed in the window.
+	 * @param int $window       Window length in seconds.
+	 * @return true|WP_Error
+	 */
+	public static function check_rate_limit( $user_id, $limit = 120, $window = 60 ) {
+		$key   = 'remindmii_rl_' . absint( $user_id );
+		$count = (int) get_transient( $key );
+
+		if ( $count >= $limit ) {
+			return new WP_Error(
+				'rate_limit_exceeded',
+				__( 'Too many requests. Please slow down.', 'remindmii' ),
+				array( 'status' => 429 )
+			);
+		}
+
+		if ( 0 === $count ) {
+			set_transient( $key, 1, $window );
+		} else {
+			set_transient( $key, $count + 1, $window );
+		}
+
+		return true;
+	}
 }

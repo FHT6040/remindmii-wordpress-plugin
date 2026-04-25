@@ -162,7 +162,7 @@ class Remindmii_CLI_Commands {
 		WP_CLI::log( 'Checking database schema...' );
 
 		foreach ( $tables as $table ) {
-			$exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" );
+			$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 			if ( $exists ) {
 				WP_CLI::log( "✓ {$table}" );
 			} else {

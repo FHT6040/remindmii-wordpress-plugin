@@ -82,11 +82,11 @@ class Remindmii_REST_Reminders_Controller {
 	 * @return bool|WP_Error
 	 */
 	public function permissions_check() {
-		if ( is_user_logged_in() ) {
-			return true;
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error( 'remindmii_forbidden', __( 'Authentication required.', 'remindmii' ), array( 'status' => 401 ) );
 		}
 
-		return new WP_Error( 'remindmii_forbidden', __( 'Authentication required.', 'remindmii' ), array( 'status' => 401 ) );
+		return Remindmii_Security::check_rate_limit( get_current_user_id() );
 	}
 
 	/**
@@ -94,8 +94,17 @@ class Remindmii_REST_Reminders_Controller {
 	 *
 	 * @return WP_REST_Response
 	 */
-	public function get_items() {
-		return rest_ensure_response( $this->repository->get_all_by_user( get_current_user_id() ) );
+	public function get_items( WP_REST_Request $request ) {
+		$all      = $this->repository->get_all_by_user( get_current_user_id() );
+		$total    = count( $all );
+		$per_page = max( 1, min( 200, absint( $request->get_param( 'per_page' ) ?: 100 ) ) );
+		$page     = max( 1, absint( $request->get_param( 'page' ) ?: 1 ) );
+		$items    = array_slice( $all, ( $page - 1 ) * $per_page, $per_page );
+
+		$response = rest_ensure_response( $items );
+		$response->header( 'X-WP-Total', $total );
+		$response->header( 'X-WP-TotalPages', (int) ceil( $total / $per_page ) );
+		return $response;
 	}
 
 	/**
@@ -232,6 +241,7 @@ class Remindmii_REST_Reminders_Controller {
 			'location_lat'        => null !== $request->get_param( 'location_lat' ) ? (float) $request->get_param( 'location_lat' ) : null,
 			'location_lng'        => null !== $request->get_param( 'location_lng' ) ? (float) $request->get_param( 'location_lng' ) : null,
 			'location_radius'     => null !== $request->get_param( 'location_radius' ) ? absint( $request->get_param( 'location_radius' ) ) : 200,
+			'notification_hours'  => null !== $request->get_param( 'notification_hours' ) ? max( 1, min( 720, absint( $request->get_param( 'notification_hours' ) ) ) ) : null,
 		);
 	}
 }

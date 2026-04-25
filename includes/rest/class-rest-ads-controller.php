@@ -69,11 +69,12 @@ class Remindmii_REST_Ads_Controller {
 			JOIN {$merch_table} m ON m.id = a.merchant_id AND m.is_active = 1
 			WHERE a.is_active = 1
 			AND ( a.start_date IS NULL OR a.start_date <= %s )
-			AND ( a.end_date IS NULL OR a.end_date >= %s )
-			ORDER BY RAND()
-			LIMIT 20";
+			AND ( a.end_date IS NULL OR a.end_date >= %s )";
 
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $today, $today ), ARRAY_A );
+		if ( ! empty( $rows ) ) {
+			shuffle( $rows );
+		}
 
 		if ( empty( $rows ) ) {
 			return rest_ensure_response( array() );
@@ -93,6 +94,9 @@ class Remindmii_REST_Ads_Controller {
 					if ( ! in_array( 'all', $genders, true ) && ! in_array( $gender, $genders, true ) ) {
 						return false;
 					}
+				}
+				if ( null !== $ad['impression_cap'] && (int) $ad['impressions'] >= (int) $ad['impression_cap'] ) {
+					return false;
 				}
 				return true;
 			}

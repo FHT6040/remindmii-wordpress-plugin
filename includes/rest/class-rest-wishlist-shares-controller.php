@@ -69,6 +69,7 @@ class Remindmii_REST_Wishlist_Shares_Controller {
 						'wishlist_id'        => array( 'required' => true, 'type' => 'integer' ),
 						'shared_with_email'  => array( 'required' => true, 'type' => 'string', 'format' => 'email' ),
 						'permission'         => array( 'type' => 'string', 'enum' => array( 'view', 'edit' ), 'default' => 'view' ),
+						'expires_at'         => array( 'type' => 'string', 'format' => 'date-time' ),
 					),
 				),
 			)
@@ -139,11 +140,21 @@ class Remindmii_REST_Wishlist_Shares_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_share( $request ) {
+		$expires_raw = $request->get_param( 'expires_at' );
+		$expires_at  = null;
+		if ( ! empty( $expires_raw ) ) {
+			$ts = strtotime( sanitize_text_field( (string) $expires_raw ) );
+			if ( $ts ) {
+				$expires_at = gmdate( 'Y-m-d H:i:s', $ts );
+			}
+		}
+
 		$id = $this->repo->create(
 			(int) $request['wishlist_id'],
 			get_current_user_id(),
 			$request['shared_with_email'],
-			$request->get_param('permission') ?: 'view'
+			$request->get_param('permission') ?: 'view',
+			$expires_at
 		);
 
 		if ( false === $id ) {

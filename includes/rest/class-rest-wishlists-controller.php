@@ -126,6 +126,17 @@ class Remindmii_REST_Wishlists_Controller {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		// Public view by slug (no auth).
+		register_rest_route(
+			$ns,
+			'/public/wishlists/by-slug/(?P<slug>[a-z0-9-]+)',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_public_wishlist_by_slug' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 	}
 
 	// -------------------------------------------------------------------------
@@ -139,10 +150,17 @@ class Remindmii_REST_Wishlists_Controller {
 	 * @return WP_REST_Response
 	 */
 	public function get_wishlists( $request ) {
-		$user_id = get_current_user_id();
-		$items   = $this->repo->get_by_user( $user_id );
+		$user_id  = get_current_user_id();
+		$all      = $this->repo->get_by_user( $user_id );
+		$total    = count( $all );
+		$per_page = max( 1, min( 200, absint( $request->get_param( 'per_page' ) ?: 100 ) ) );
+		$page     = max( 1, absint( $request->get_param( 'page' ) ?: 1 ) );
+		$items    = array_slice( $all, ( $page - 1 ) * $per_page, $per_page );
 
-		return rest_ensure_response( array( 'wishlists' => $items ) );
+		$response = rest_ensure_response( array( 'wishlists' => $items ) );
+		$response->header( 'X-WP-Total', $total );
+		$response->header( 'X-WP-TotalPages', (int) ceil( $total / $per_page ) );
+		return $response;
 	}
 
 	/**
@@ -180,6 +198,9 @@ class Remindmii_REST_Wishlists_Controller {
 		if ( ! $new_id ) {
 			return new WP_Error( 'create_failed', __( 'Could not create wishlist.', 'remindmii' ), array( 'status' => 500 ) );
 		}
+
+		$slug_base = sanitize_title( $data['title'] );
+		$this->repo->set_slug( $new_id, $user_id, $slug_base . '-' . $new_id );
 
 		$wishlist = $this->repo->get_by_id( $new_id, $user_id );
 
@@ -410,6 +431,30 @@ class Remindmii_REST_Wishlists_Controller {
 	}
 
 	/**
+	 * GET /public/wishlists/by-slug/{slug}
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function get_public_wishlist_by_slug( $request ) {
+		$slug     = sanitize_title( (string) $request['slug'] );
+		$wishlist = $this->repo->get_by_slug( $slug );
+
+		if ( ! $wishlist ) {
+			return new WP_Error( 'not_found', __( 'Wishlist not found or not public.', 'remindmii' ), array( 'status' => 404 ) );
+		}
+
+		$items = $this->repo->get_items_public( $wishlist['id'] );
+
+		return rest_ensure_response(
+			array(
+				'wishlist' => $wishlist,
+				'items'    => $items,
+			)
+		);
+	}
+
+	/**
 	 * Permission: must be logged in.
 	 *
 	 * @return bool|WP_Error
@@ -419,7 +464,7 @@ class Remindmii_REST_Wishlists_Controller {
 			return new WP_Error( 'unauthorized', __( 'You must be logged in.', 'remindmii' ), array( 'status' => 401 ) );
 		}
 
-		return true;
+		return Remindmii_Security::check_rate_limit( get_current_user_id() );
 	}
 
 	// -------------------------------------------------------------------------

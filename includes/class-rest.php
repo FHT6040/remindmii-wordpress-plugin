@@ -141,6 +141,44 @@ class Remindmii_REST {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		register_rest_route(
+			'remindmii/v1',
+			'/unsubscribe',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'handle_unsubscribe' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+	}
+
+	/**
+	 * Unsubscribe a user from email notifications via token.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function handle_unsubscribe( WP_REST_Request $request ) {
+		$token = sanitize_text_field( (string) $request->get_param( 'token' ) );
+
+		if ( empty( $token ) ) {
+			return new WP_Error( 'remindmii_invalid_token', __( 'Invalid unsubscribe token.', 'remindmii' ), array( 'status' => 400 ) );
+		}
+
+		$repo = new Remindmii_User_Profiles_Repository();
+		$done = $repo->disable_notifications_by_token( $token );
+
+		if ( ! $done ) {
+			return new WP_Error( 'remindmii_unsubscribe_failed', __( 'Token not found or already unsubscribed.', 'remindmii' ), array( 'status' => 404 ) );
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'You have been unsubscribed from email notifications.', 'remindmii' ),
+			)
+		);
 	}
 
 	/**

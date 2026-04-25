@@ -57,7 +57,8 @@ class Remindmii_Reminders_Repository {
 
 		$results = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT reminders.*, profiles.email AS profile_email, profiles.full_name AS profile_full_name, profiles.notification_hours
+				"SELECT reminders.*, profiles.email AS profile_email, profiles.full_name AS profile_full_name,
+				COALESCE(reminders.notification_hours, profiles.notification_hours) AS notification_hours
 				FROM {$this->table_name()} AS reminders
 				INNER JOIN {$profiles_table} AS profiles ON profiles.user_id = reminders.user_id
 				WHERE reminders.notification_sent = 0
@@ -65,7 +66,7 @@ class Remindmii_Reminders_Repository {
 					AND profiles.email_notifications = 1
 					AND profiles.email IS NOT NULL
 					AND profiles.email <> ''
-					AND reminders.reminder_date <= DATE_ADD( %s, INTERVAL profiles.notification_hours HOUR )
+					AND reminders.reminder_date <= DATE_ADD( %s, INTERVAL COALESCE(reminders.notification_hours, profiles.notification_hours) HOUR )
 				ORDER BY reminders.reminder_date ASC, reminders.id ASC
 				LIMIT %d",
 				$now,
@@ -126,10 +127,11 @@ class Remindmii_Reminders_Repository {
 				'location_lat'        => isset( $data['location_lat'] )  ? $data['location_lat']  : null,
 				'location_lng'        => isset( $data['location_lng'] )  ? $data['location_lng']  : null,
 				'location_radius'     => isset( $data['location_radius'] ) ? (int) $data['location_radius'] : 200,
+				'notification_hours'  => isset( $data['notification_hours'] ) && null !== $data['notification_hours'] ? absint( $data['notification_hours'] ) : null,
 				'created_at'          => $timestamp,
 				'updated_at'          => $timestamp,
 			),
-			array( '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%f', '%f', '%d', '%s', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%d', '%s', '%f', '%f', '%d', '%d', '%s', '%s' )
 		);
 
 		if ( false === $inserted ) {
@@ -170,13 +172,14 @@ class Remindmii_Reminders_Repository {
 				'location_lat'        => isset( $data['location_lat'] )  ? $data['location_lat']  : null,
 				'location_lng'        => isset( $data['location_lng'] )  ? $data['location_lng']  : null,
 				'location_radius'     => isset( $data['location_radius'] ) ? (int) $data['location_radius'] : 200,
+				'notification_hours'  => isset( $data['notification_hours'] ) && null !== $data['notification_hours'] ? absint( $data['notification_hours'] ) : null,
 				'updated_at'          => current_time( 'mysql' ),
 			),
 			array(
 				'id'      => absint( $reminder_id ),
 				'user_id' => absint( $user_id ),
 			),
-			array( '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%f', '%f', '%d', '%s' ),
+			array( '%d', '%s', '%s', '%s', '%d', '%s', '%d', '%s', '%f', '%f', '%d', '%d', '%s' ),
 			array( '%d', '%d' )
 		);
 
@@ -292,6 +295,7 @@ class Remindmii_Reminders_Repository {
 		$record['is_recurring']      = (bool) $record['is_recurring'];
 		$record['notification_sent'] = (bool) $record['notification_sent'];
 		$record['is_completed']      = (bool) $record['is_completed'];
+		$record['notification_hours'] = isset( $record['notification_hours'] ) && null !== $record['notification_hours'] ? (int) $record['notification_hours'] : null;
 
 		return $record;
 	}
