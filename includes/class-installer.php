@@ -43,6 +43,11 @@ class Remindmii_Installer {
 				'content' => '[remindmii_app]',
 			),
 			array(
+				'title'   => __( 'Login', 'remindmii' ),
+				'slug'    => 'remindmii-login',
+				'content' => '[remindmii_login]',
+			),
+			array(
 				'title'   => __( 'Wishlist', 'remindmii' ),
 				'slug'    => 'wishlist',
 				'content' => '[remindmii_public_wishlist]',

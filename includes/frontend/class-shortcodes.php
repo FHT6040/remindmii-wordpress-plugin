@@ -14,6 +14,7 @@ class Remindmii_Shortcodes {
 		add_shortcode( 'remindmii_app', array( $this, 'render_app' ) );
 		add_shortcode( 'remindmii_public_wishlist', array( $this, 'render_public_wishlist' ) );
 		add_shortcode( 'remindmii_merchant', array( $this, 'render_merchant' ) );
+		add_shortcode( 'remindmii_login', array( $this, 'render_login' ) );
 	}
 
 	/**
@@ -260,6 +261,19 @@ class Remindmii_Shortcodes {
 
 		ob_start();
 		require REMINDMII_PLUGIN_DIR . 'templates/frontend/public-wishlist.php';
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Render the custom login / register / lost-password page.
+	 *
+	 * @return string
+	 */
+	public function render_login() {
+		wp_enqueue_style( 'remindmii-frontend' );
+
+		ob_start();
+		require REMINDMII_PLUGIN_DIR . 'templates/frontend/login.php';
 		return (string) ob_get_clean();
 	}
 

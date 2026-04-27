@@ -50,6 +50,7 @@ require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-merchants-controll
 require_once REMINDMII_PLUGIN_DIR . 'includes/rest/class-rest-ads-controller.php';
 
 require_once REMINDMII_PLUGIN_DIR . 'includes/cli/class-cli-commands.php';
+require_once REMINDMII_PLUGIN_DIR . 'includes/class-login.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/frontend/class-shortcodes.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/db/class-schema.php';
 require_once REMINDMII_PLUGIN_DIR . 'includes/class-plugin.php';

@@ -19,6 +19,7 @@ class Remindmii_Plugin {
 		$cron       = new Remindmii_Cron();
 		$security   = new Remindmii_Security();
 		$shortcodes = new Remindmii_Shortcodes();
+		$login      = new Remindmii_Login();
 
 		$admin->register_hooks();
 		$frontend->register_hooks();
@@ -26,6 +27,7 @@ class Remindmii_Plugin {
 		$cron->register_hooks();
 		$security->register_hooks();
 		$shortcodes->register_hooks();
+		$login->register_hooks();
 
 		add_action( 'user_register', array( $this, 'bootstrap_user_records' ) );
 	}
