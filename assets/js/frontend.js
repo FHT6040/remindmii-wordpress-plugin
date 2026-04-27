@@ -2025,9 +2025,9 @@ document.addEventListener('DOMContentLoaded', function () {
 			activeTab = tab;
 			var doc = content[ tab ];
 			legalContent.innerHTML =
-				'<h2 class="remindmii-legal-doc__title">' + esc( doc.title ) + '</h2>' +
-				( doc.updated ? '<p class="remindmii-legal-doc__updated">' + esc( doc.updated ) + '</p>' : '' ) +
-				'<p class="remindmii-legal-doc__body">' + esc( doc.body ) + '</p>';
+				'<h2 class="remindmii-legal-doc__title">' + escapeHtml( doc.title ) + '</h2>' +
+				( doc.updated ? '<p class="remindmii-legal-doc__updated">' + escapeHtml( doc.updated ) + '</p>' : '' ) +
+				'<p class="remindmii-legal-doc__body">' + escapeHtml( doc.body ) + '</p>';
 
 			legalTabs.forEach( function(btn) {
 				btn.classList.toggle( 'is-active', btn.getAttribute('data-remindmii-legal-tab') === tab );
