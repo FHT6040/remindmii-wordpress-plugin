@@ -23,6 +23,7 @@ class Remindmii_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_remindmii_run_notifications', array( $this, 'handle_run_notifications' ) );
 		add_action( 'admin_post_remindmii_delete_user_data',  array( $this, 'handle_delete_user_data' ) );
+		add_action( 'admin_post_remindmii_repair_pages',      array( $this, 'handle_repair_pages' ) );
 		add_action( 'admin_post_remindmii_merchant_create',      array( $this, 'handle_merchant_create' ) );
 		add_action( 'admin_post_remindmii_merchant_toggle',      array( $this, 'handle_merchant_toggle' ) );
 		add_action( 'admin_post_remindmii_merchant_assign_user', array( $this, 'handle_merchant_assign_user' ) );
@@ -480,6 +481,59 @@ if ( ! empty( $dry_details ) ) : ?>
 <span class="remindmii-stat-value"><?php echo $next_run ? esc_html( human_time_diff( $next_run ) ) : esc_html__( 'N/A', 'remindmii' ); ?></span>
 <span class="remindmii-stat-label"><?php esc_html_e( 'Next Cron Run', 'remindmii' ); ?></span>
 </div>
+</div>
+
+<?php
+// Page health check.
+$pages_health  = Remindmii_Installer::get_pages_health();
+$pages_ok      = array_filter( $pages_health, fn( $p ) => 'ok' === $p['status'] );
+$pages_broken  = count( $pages_health ) - count( $pages_ok );
+$repair_notice = isset( $_GET['remindmii_notice'] ) && 'pages_repaired' === $notice;
+?>
+<div class="remindmii-admin-section">
+<h2><?php esc_html_e( 'Page Health', 'remindmii' ); ?></h2>
+<?php if ( $repair_notice ) : ?>
+<div class="notice notice-success is-dismissible"><p><?php esc_html_e( 'Pages repaired successfully.', 'remindmii' ); ?></p></div>
+<?php endif; ?>
+<?php if ( $pages_broken > 0 ) : ?>
+<div class="notice notice-warning inline"><p>
+	<?php echo esc_html( sprintf( _n( '%d page has a problem.', '%d pages have problems.', $pages_broken, 'remindmii' ), $pages_broken ) ); ?>
+	<?php esc_html_e( 'Click "Repair Pages" to fix slugs, shortcodes, and create any missing pages.', 'remindmii' ); ?>
+</p></div>
+<?php endif; ?>
+<table class="widefat striped" style="margin-bottom:12px">
+<thead><tr>
+	<th><?php esc_html_e( 'Page', 'remindmii' ); ?></th>
+	<th><?php esc_html_e( 'Expected slug', 'remindmii' ); ?></th>
+	<th><?php esc_html_e( 'Shortcode', 'remindmii' ); ?></th>
+	<th><?php esc_html_e( 'Status', 'remindmii' ); ?></th>
+	<th><?php esc_html_e( 'URL', 'remindmii' ); ?></th>
+</tr></thead>
+<tbody>
+<?php foreach ( $pages_health as $ph ) :
+	$status_map = array(
+		'ok'            => array( 'label' => __( 'OK', 'remindmii' ), 'color' => '#10b981' ),
+		'content_wrong' => array( 'label' => __( 'Wrong shortcode', 'remindmii' ), 'color' => '#f59e0b' ),
+		'wrong_slug'    => array( 'label' => __( 'Wrong slug', 'remindmii' ), 'color' => '#f59e0b' ),
+		'missing'       => array( 'label' => __( 'Missing', 'remindmii' ), 'color' => '#ef4444' ),
+	);
+	$s = $status_map[ $ph['status'] ] ?? array( 'label' => $ph['status'], 'color' => '#6b7280' );
+?>
+<tr>
+	<td><strong><?php echo esc_html( $ph['title'] ); ?></strong></td>
+	<td><code><?php echo esc_html( $ph['slug'] ); ?></code></td>
+	<td><?php echo $ph['shortcode'] ? '<code>' . esc_html( $ph['shortcode'] ) . '</code>' : '<em>—</em>'; ?></td>
+	<td><span style="color:<?php echo esc_attr( $s['color'] ); ?>;font-weight:600"><?php echo esc_html( $s['label'] ); ?></span></td>
+	<td><?php if ( $ph['url'] ) : ?><a href="<?php echo esc_url( $ph['url'] ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $ph['url'] ); ?></a><?php else : ?>—<?php endif; ?></td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+	<input type="hidden" name="action" value="remindmii_repair_pages" />
+	<?php wp_nonce_field( 'remindmii_repair_pages' ); ?>
+	<?php submit_button( __( 'Repair Pages', 'remindmii' ), 'secondary', 'submit', false ); ?>
+</form>
 </div>
 
 <?php
@@ -1410,6 +1464,21 @@ public function handle_retry_notification() {
 		'page'             => 'remindmii',
 		'remindmii_tab'    => 'logs',
 		'remindmii_notice' => $result ? 'retry_success' : 'retry_failed',
+	), admin_url( 'admin.php' ) ) );
+	exit;
+}
+
+/** Handle repair pages POST. */
+public function handle_repair_pages() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You are not allowed to perform this action.', 'remindmii' ) );
+	}
+	check_admin_referer( 'remindmii_repair_pages' );
+	Remindmii_Installer::repair_pages();
+	wp_safe_redirect( add_query_arg( array(
+		'page'             => 'remindmii',
+		'remindmii_tab'    => 'dashboard',
+		'remindmii_notice' => 'pages_repaired',
 	), admin_url( 'admin.php' ) ) );
 	exit;
 }
