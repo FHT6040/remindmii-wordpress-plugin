@@ -272,6 +272,29 @@ class Remindmii_Shortcodes {
 	public function render_login() {
 		wp_enqueue_style( 'remindmii-frontend' );
 
+		wp_register_script(
+			'remindmii-login',
+			REMINDMII_PLUGIN_URL . 'assets/js/login.js',
+			array(),
+			REMINDMII_VERSION,
+			true
+		);
+		wp_localize_script(
+			'remindmii-login',
+			'remindmiiLogin',
+			array(
+				'nonce'           => wp_create_nonce( 'wp_rest' ),
+				'loginUrl'        => esc_url_raw( rest_url( 'remindmii/v1/auth/login' ) ),
+				'registerUrl'     => esc_url_raw( rest_url( 'remindmii/v1/auth/register' ) ),
+				'lostPasswordUrl' => esc_url_raw( rest_url( 'remindmii/v1/auth/lost-password' ) ),
+				'resetPasswordUrl'=> esc_url_raw( rest_url( 'remindmii/v1/auth/reset-password' ) ),
+				'i18n'            => array(
+					'genericError' => __( 'Something went wrong. Please try again.', 'remindmii' ),
+				),
+			)
+		);
+		wp_enqueue_script( 'remindmii-login' );
+
 		ob_start();
 		require REMINDMII_PLUGIN_DIR . 'templates/frontend/login.php';
 		return (string) ob_get_clean();

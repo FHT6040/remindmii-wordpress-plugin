@@ -1,12 +1,18 @@
 <?php
 /**
- * Template: Custom login / register / lost-password page.
+ * Template: Custom login / register / lost-password / reset-password page.
  * Rendered by the [remindmii_login] shortcode.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
+
+$action   = isset( $_GET['action'] ) ? sanitize_key( (string) $_GET['action'] ) : '';
+$is_reset = in_array( $action, array( 'rp', 'resetpass' ), true )
+			&& ! empty( $_GET['key'] ) && ! empty( $_GET['login'] );
+$rp_key   = $is_reset ? sanitize_text_field( wp_unslash( (string) $_GET['key'] ) ) : '';
+$rp_login = $is_reset ? sanitize_text_field( wp_unslash( (string) $_GET['login'] ) ) : '';
 
 $allowed_tabs = array( 'login', 'register', 'lost_password' );
 $tab          = isset( $_GET['tab'] ) ? sanitize_key( (string) $_GET['tab'] ) : 'login';
@@ -35,7 +41,7 @@ $tab_url = function ( $t ) {
 		?>
 	</div>
 
-	<?php if ( 'lost_password' !== $tab ) : ?>
+	<?php if ( ! $is_reset && 'lost_password' !== $tab ) : ?>
 	<nav class="remindmii-login-tabs" aria-label="<?php esc_attr_e( 'Authentication tabs', 'remindmii' ); ?>">
 		<a href="<?php echo $tab_url( 'login' ); ?>"
 		   class="remindmii-login-tab <?php echo 'login' === $tab ? 'is-active' : ''; ?>">
@@ -62,7 +68,52 @@ $tab_url = function ( $t ) {
 		</p>
 		<?php endif; ?>
 
-		<?php if ( 'login' === $tab ) : ?>
+		<?php if ( $is_reset ) : ?>
+		<!-- RESET PASSWORD -->
+		<h2 class="remindmii-login-heading"><?php esc_html_e( 'Set a new password', 'remindmii' ); ?></h2>
+		<form method="post" class="remindmii-login-form" novalidate>
+			<?php wp_nonce_field( 'remindmii_reset_password', '_remindmii_nonce' ); ?>
+			<input type="hidden" name="remindmii_login_action" value="reset_password" />
+			<input type="hidden" name="rp_key"   value="<?php echo esc_attr( $rp_key ); ?>" />
+			<input type="hidden" name="rp_login" value="<?php echo esc_attr( $rp_login ); ?>" />
+
+			<div class="remindmii-login-field">
+				<label class="remindmii-login-label" for="rml-pass1">
+					<?php esc_html_e( 'New password', 'remindmii' ); ?>
+				</label>
+				<input
+					id="rml-pass1"
+					class="remindmii-login-input"
+					type="password"
+					name="pass1"
+					autocomplete="new-password"
+					required
+					minlength="6"
+					autofocus
+				/>
+			</div>
+
+			<div class="remindmii-login-field">
+				<label class="remindmii-login-label" for="rml-pass2">
+					<?php esc_html_e( 'Confirm password', 'remindmii' ); ?>
+				</label>
+				<input
+					id="rml-pass2"
+					class="remindmii-login-input"
+					type="password"
+					name="pass2"
+					autocomplete="new-password"
+					required
+					minlength="6"
+				/>
+			</div>
+
+			<button type="submit" class="remindmii-login-btn">
+				<?php esc_html_e( 'Set new password', 'remindmii' ); ?>
+			</button>
+		</form>
+
+		<?php elseif ( 'login' === $tab ) : ?>
 		<!-- LOGIN -->
 		<form method="post" class="remindmii-login-form" novalidate>
 			<?php wp_nonce_field( 'remindmii_login', '_remindmii_nonce' ); ?>
